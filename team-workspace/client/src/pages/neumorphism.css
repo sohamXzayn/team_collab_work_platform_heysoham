@@ -1,0 +1,130 @@
+:root {
+  /* Light Neumorphic Palette */
+  --nm-bg: #e0e5ec;
+  --nm-shadow-dark: #a3b1c6;
+  --nm-shadow-light: #ffffff;
+  --nm-text: #4a5568;
+  --nm-accent: #4f46e5;
+  --nm-accent-text: #ffffff;
+  --nm-error-bg: #fef2f2;
+  --nm-error-text: #dc2626;
+}
+
+[data-theme='dark'] {
+  /* Dark Neumorphic Palette */
+  --nm-bg: #1a202c;
+  --nm-shadow-dark: #0f172a;
+  --nm-shadow-light: #2d3748;
+  --nm-text: #e2e8f0;
+  --nm-accent: #818cf8;
+  --nm-accent-text: #1a202c;
+  --nm-error-bg: #450a0a;
+  --nm-error-text: #fecaca;
+}
+
+/* Neumorphic Components */
+.auth-card {
+  max-width: 28rem;
+  width: 100%;
+  background-color: var(--nm-bg);
+  padding: 2.5rem;
+  border-radius: 2.5rem;
+  /* Enhanced 3D Neumorphic lift */
+  box-shadow: 
+    16px 16px 32px var(--nm-shadow-dark), 
+    -16px -16px 32px var(--nm-shadow-light),
+    inset 1px 1px 2px rgba(255, 255, 255, 0.3),
+    inset -1px -1px 2px rgba(0, 0, 0, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.brand-logo {
+  width: 72px;
+  height: 72px;
+  background-color: var(--nm-bg);
+  border-radius: 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2.5rem;
+  box-shadow: 
+    8px 8px 16px var(--nm-shadow-dark), 
+    -8px -8px 16px var(--nm-shadow-light);
+  line-height: 1;
+}
+
+.input-field {
+  width: 100%;
+  background-color: var(--nm-bg);
+  color: var(--nm-text);
+  border: none;
+  border-radius: 0.75rem;
+  padding: 0.875rem 1rem;
+  outline: none;
+  font-size: 1rem;
+  line-height: 1.5;
+  margin-bottom: 1.25rem; /* Added for consistent vertical spacing */
+  /* Deep Recessed Neumorphic Effect */
+  box-shadow: 
+    inset 6px 6px 12px var(--nm-shadow-dark), 
+    inset -6px -6px 12px var(--nm-shadow-light);
+}
+
+.input-field:focus {
+  box-shadow: 
+    inset 8px 8px 16px var(--nm-shadow-dark), 
+    inset -8px -8px 16px var(--nm-shadow-light);
+}
+
+.btn-outline {
+  width: 100%;
+  background-color: var(--nm-bg);
+  color: var(--nm-accent);
+  font-weight: 700;
+  padding: 1rem;
+  border-radius: 1.5rem;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  cursor: pointer;
+  margin-bottom: 1.25rem; /* Added for consistent vertical spacing */
+  box-shadow: 
+    10px 10px 20px var(--nm-shadow-dark), 
+    -10px -10px 20px var(--nm-shadow-light);
+}
+
+.btn-outline:hover {
+  transform: scale(1.02);
+  box-shadow: 
+    12px 12px 24px var(--nm-shadow-dark), 
+    -12px -12px 24px var(--nm-shadow-light);
+}
+
+.btn-outline:active {
+  transform: translateY(0);
+  box-shadow: 
+    inset 4px 4px 8px var(--nm-shadow-dark), 
+    inset -4px -4px 8px var(--nm-shadow-light);
+}
+
+.error-alert {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background-color: var(--nm-error-bg);
+  border: none;
+  color: var(--nm-error-text);
+  padding: 0.75rem;
+  border-radius: 0.75rem; /* Adjusted for consistency with input fields */
+  margin-bottom: 1.25rem; /* Adjusted for consistent vertical spacing */
+  font-size: 0.875rem;
+  font-weight: 500;
+  box-shadow: inset 2px 2px 5px var(--nm-shadow-dark);
+}
+
+/* Remove bottom margin from the last child of auth-card to prevent extra space */
+.auth-card > *:last-child {
+  margin-bottom: 0;
+}
