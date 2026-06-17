@@ -10,6 +10,7 @@ import FilesPage from './pages/FilesPage';
 import ChatPage from './pages/ChatPage';
 import TasksPage from './pages/TasksPage';
 import NotesAndPollsPage from './pages/NotesAndPollsPage';
+import CodeRoomPage from './pages/CodeRoomPage'; // Week 6 Code Room Import
 import NotificationToast from './components/NotificationToast';
 import './pages/neumorphism.css';
 
@@ -41,6 +42,11 @@ function Dashboard() {
           <Link to="/notes" className="btn-outline flex flex-col items-center justify-center" style={{ height: 'auto', padding: '2rem' }}>
             <span className="material-symbols-outlined mb-2 text-indigo" style={{ fontSize: '36px' }}>description</span>
             Notes & Polls
+          </Link>
+
+          <Link to="/code" className="btn-outline flex flex-col items-center justify-center" style={{ height: 'auto', padding: '2rem' }}>
+            <span className="material-symbols-outlined mb-2 text-indigo" style={{ fontSize: '36px' }}>code</span>
+            Code Room
           </Link>
           
           {userData?.role === 'admin' && (
@@ -96,6 +102,7 @@ function App() {
             <Route path="/chat/:channelId" element={<ChatPage />} />
             <Route path="/tasks" element={<TasksPage teamId="team1" />} />
             <Route path="/notes" element={<NotesAndPollsPage teamId="team1" />} />
+            <Route path="/code" element={<CodeRoomPage teamId="team1" />} />
           </Route>
 
           {/* Admin Only Routes */}
