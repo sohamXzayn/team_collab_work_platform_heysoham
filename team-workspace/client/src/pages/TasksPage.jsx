@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { db } from '../services/firebase';
 import { ref, push, onValue, update } from 'firebase/database';
 import { useAuth } from '../context/AuthContext';
@@ -82,6 +82,7 @@ export default function TasksPage({ teamId = "team1" }) {
       // Reset Form fields
       setTitle('');
       setAssignedTo('');
+      setPriority('Medium');
     } catch (err) {
       console.error("Task assignment pipeline failed", err);
       setError('Failed to deploy task allocation.');
@@ -112,7 +113,7 @@ export default function TasksPage({ teamId = "team1" }) {
         {/* Task Creation Form Panel */}
         <div className="section-card mb-8">
           <h3 className="text-xl font-bold mb-4 text-indigo">Create & Allocate Task</h3>
-          <form onSubmit={handleCreateTask} className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+          <form onSubmit={handleCreateTask} className="grid grid-cols-1 md:grid-cols-5 gap-4 items-end">
             <div className="md:col-span-2">
               <label className="block text-gray-muted text-xs font-bold mb-1 uppercase">Task Title</label>
               <input 
@@ -137,6 +138,19 @@ export default function TasksPage({ teamId = "team1" }) {
                 ))}
               </select>
             </div>
+            <div>
+              <label className="block text-gray-muted text-xs font-bold mb-1 uppercase">Priority</label>
+              <select 
+                value={priority} 
+                onChange={(e) => setPriority(e.target.value)} 
+                className="w-full input-field"
+                style={{ padding: '0.65rem' }}
+              >
+                <option value="Low">Low</option>
+                <option value="Medium">Medium</option>
+                <option value="High">High</option>
+              </select>
+            </div>
             <button type="submit" className="btn-outline w-full text-center font-bold">
               Assign Task
             </button>
@@ -155,7 +169,15 @@ export default function TasksPage({ teamId = "team1" }) {
                 <div key={task.id} className="grid grid-cols-1 md:grid-cols-3 items-center justify-between p-4 rounded-xl shadow-inner bg-opacity-40 border border-gray-200">
                   <div>
                     <h4 className="font-bold text-gray-800 text-base">{task.title}</h4>
-                    <p className="text-xs text-gray-muted mt-0.5">Assigned to: <span className="text-indigo font-semibold">{task.assignedName}</span></p>
+                    <p className="text-xs text-gray-muted mt-0.5">
+                      Assigned to: <span className="text-indigo font-semibold">{task.assignedName}</span>
+                      {" | "}
+                      Priority: <span className={`font-semibold ${
+                        task.priority === 'High' ? 'text-rose-600' :
+                        task.priority === 'Medium' ? 'text-amber-600' :
+                        'text-emerald-600'
+                      }`}>{task.priority || 'Medium'}</span>
+                    </p>
                   </div>
                   
                   <div className="text-center py-2 md:py-0">

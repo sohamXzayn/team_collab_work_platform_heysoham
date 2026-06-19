@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { db } from '../services/firebase';
 import { ref, push, onValue, query, orderByChild, equalTo } from 'firebase/database';
 import { useAuth } from '../context/AuthContext';
@@ -83,6 +83,7 @@ export default function FilesPage({ teamId = "team1" }) { // Defaulted to team1 
         fileName: file.fileName,
         reportedBy: userData?.name || currentUser?.email,
         reason: reason,
+        // eslint-disable-next-line react-hooks/purity
         timestamp: Date.now()
       });
       alert("Report submitted to administrators.");
