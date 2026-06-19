@@ -13,7 +13,8 @@ import FilesPage from './pages/FilesPage';
 import ChatPage from './pages/ChatPage';
 import TasksPage from './pages/TasksPage';
 import NotesAndPollsPage from './pages/NotesAndPollsPage';
-import CodeRoomPage from './pages/CodeRoomPage'; // Week 6 Code Room Import
+import CodeRoomPage from './pages/CodeRoomPage';
+import WhiteboardPage from './pages/WhiteboardPage'; // Week 7 Whiteboard Import
 import NotificationToast from './components/NotificationToast';
 import './pages/neumorphism.css';
 
@@ -110,7 +111,7 @@ function Dashboard() {
     }
   };
 
-  // Build Recent Activity Feed (real events + nice-looking simulated fallback events)
+  // Build Recent Activity Feed
   const dynamicActivities = [];
   files.forEach(f => {
     dynamicActivities.push({
@@ -189,6 +190,10 @@ function Dashboard() {
             <Link to="/code" className="btn-outline" style={{ justifyContent: 'flex-start', padding: '0.75rem 1.25rem', borderRadius: '1rem', fontSize: '0.875rem' }}>
               <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>code</span>
               <span>Code Room</span>
+            </Link>
+            <Link to="/canvas" className="btn-outline" style={{ justifyContent: 'flex-start', padding: '0.75rem 1.25rem', borderRadius: '1rem', fontSize: '0.875rem' }}>
+              <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>gesture</span>
+              <span>Design Canvas</span>
             </Link>
             {userData?.role === 'admin' && (
               <Link to="/admin" className="btn-outline" style={{ justifyContent: 'flex-start', padding: '0.75rem 1.25rem', borderRadius: '1rem', fontSize: '0.875rem', border: '1px dashed var(--nm-accent)' }}>
@@ -273,7 +278,7 @@ function Dashboard() {
           {/* Left Column: Personal Pending Tasks */}
           <section className="section-card" style={{ padding: '2rem' }}>
             <div className="flex justify-between items-center mb-6">
-              <h3 className="text-lg font-bold" style={{ color: 'var(--nm-text)', display: 'flex', itemsAlign: 'center', gap: '0.5rem' }}>
+              <h3 className="text-lg font-bold" style={{ color: 'var(--nm-text)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                 <span className="material-symbols-outlined text-indigo">task_alt</span>
                 <span>My Tasks ({myPendingTasks.length})</span>
               </h3>
@@ -315,7 +320,7 @@ function Dashboard() {
 
           {/* Right Column: Live Team Activity Stream */}
           <section className="section-card" style={{ padding: '2rem' }}>
-            <h3 className="text-lg font-bold mb-6" style={{ color: 'var(--nm-text)', display: 'flex', itemsAlign: 'center', gap: '0.5rem' }}>
+            <h3 className="text-lg font-bold mb-6" style={{ color: 'var(--nm-text)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
               <span className="material-symbols-outlined text-indigo">bolt</span>
               <span>Recent Activity</span>
             </h3>
@@ -377,6 +382,7 @@ function App() {
             <Route path="/tasks" element={<TasksPage teamId="team1" />} />
             <Route path="/notes" element={<NotesAndPollsPage teamId="team1" />} />
             <Route path="/code" element={<CodeRoomPage teamId="team1" />} />
+            <Route path="/canvas" element={<WhiteboardPage teamId="team1" />} />
           </Route>
 
           {/* Admin Only Routes */}
