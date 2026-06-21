@@ -57,9 +57,12 @@ body {
 .section-card {
   background-color: var(--white);
   padding: 1.5rem;
-  border-radius: 1rem;
-  border: 1px solid var(--gray-200);
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+  border-radius: 0.75rem;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.02), 0 2px 4px -1px rgba(0, 0, 0, 0.02);
+}
+[data-theme='dark'] .section-card {
+  border: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 .btn-primary {
@@ -278,27 +281,25 @@ body {
 }
 
 .stats-card-premium {
-  background: rgba(255, 255, 255, 0.55);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.4);
+  background: var(--white);
+  border: 1px solid rgba(0, 0, 0, 0.06);
   padding: 1.5rem;
-  border-radius: 1.25rem;
-  box-shadow: 8px 8px 24px var(--nm-shadow-dark), -8px -8px 24px var(--nm-shadow-light);
+  border-radius: 0.75rem;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.03), 0 2px 4px -1px rgba(0, 0, 0, 0.02);
   display: flex;
   flex-direction: column;
   position: relative;
   overflow: hidden;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
 [data-theme='dark'] .stats-card-premium {
-  background: rgba(30, 41, 59, 0.45);
   border: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 .stats-card-premium:hover {
   transform: translateY(-2px);
-  box-shadow: 12px 12px 28px var(--nm-shadow-dark), -12px -12px 28px var(--nm-shadow-light);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -2px rgba(0, 0, 0, 0.04);
 }
 
 .stats-icon-wrapper {
@@ -352,12 +353,10 @@ body {
 }
 
 .launchpad-card {
-  background: rgba(255, 255, 255, 0.4);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.3);
+  background: var(--white);
+  border: 1px solid rgba(0, 0, 0, 0.06);
   padding: 1.75rem 1.25rem;
-  border-radius: 1.5rem;
+  border-radius: 0.75rem;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -366,25 +365,23 @@ body {
   text-decoration: none;
   font-weight: 700;
   font-size: 0.95rem;
-  box-shadow: 6px 6px 18px var(--nm-shadow-dark), -6px -6px 18px var(--nm-shadow-light);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.03), 0 2px 4px -1px rgba(0, 0, 0, 0.02);
   position: relative;
   overflow: hidden;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, color 0.2s ease;
 }
 
 [data-theme='dark'] .launchpad-card {
-  background: rgba(30, 41, 59, 0.35);
-  border: 1px solid rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 .launchpad-card:hover {
   transform: translateY(-4px);
-  box-shadow: 10px 10px 24px var(--nm-shadow-dark), -10px -10px 24px var(--nm-shadow-light);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -2px rgba(0, 0, 0, 0.04);
   color: var(--nm-accent);
 }
-
 .launchpad-card:active {
   transform: translateY(0);
-  box-shadow: inset 4px 4px 8px var(--nm-shadow-dark), inset -4px -4px 8px var(--nm-shadow-light);
 }
 
 /* Sections Grid Layout (Tasks & Activity Feed) */
@@ -453,13 +450,17 @@ body {
 /* Task Mini Card on Dashboard */
 .mini-task-card {
   padding: 1rem;
-  border-radius: 1rem;
-  background-color: var(--nm-bg);
-  box-shadow: inset 4px 4px 8px var(--nm-shadow-dark), inset -4px -4px 8px var(--nm-shadow-light);
+  border-radius: 0.5rem;
+  background-color: var(--white);
+  border: 1px solid rgba(0, 0, 0, 0.06);
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-bottom: 0.75rem;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
+}
+[data-theme='dark'] .mini-task-card {
+  border: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 .mini-task-card:last-child {
@@ -473,10 +474,14 @@ body {
   align-items: center;
   text-align: center;
   padding: 1.5rem;
-  border-radius: 1.5rem;
-  background-color: var(--nm-bg);
-  box-shadow: inset 5px 5px 10px var(--nm-shadow-dark), inset -5px -5px 10px var(--nm-shadow-light);
+  border-radius: 0.75rem;
+  background-color: var(--white);
+  border: 1px solid rgba(0, 0, 0, 0.06);
   margin-bottom: 2rem;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
+}
+[data-theme='dark'] .profile-section-dash {
+  border: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 .profile-avatar-large {

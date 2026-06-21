@@ -18,6 +18,8 @@ export default function CodeRoomPage({ teamId = "team1" }) {
   const [codeBlock, setCodeBlock] = useState('');
   const [language, setLanguage] = useState('javascript');
   const [copiedId, setCopiedId] = useState(null);
+  const [isRunning, setIsRunning] = useState(false);
+  const [consoleOutput, setConsoleOutput] = useState('');
 
   // 1. Stream Live Scratchpad Data
   useEffect(() => {
@@ -88,6 +90,38 @@ export default function CodeRoomPage({ teamId = "team1" }) {
     }
   };
 
+  // Sandbox API code execution service
+  const handleRunCode = async () => {
+    if (scratchpadMode !== 'javascript' && scratchpadMode !== 'python') {
+      setConsoleOutput("Code execution is only supported for JavaScript and Python languages in this environment.");
+      return;
+    }
+    setIsRunning(true);
+    setConsoleOutput("Executing your code in sandbox...\n");
+    try {
+      const response = await fetch("https://emkc.org/api/v2/piston/execute", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          language: scratchpadMode,
+          version: scratchpadMode === 'javascript' ? '18.15.0' : '3.10.0',
+          files: [{ content: scratchpadCode }]
+        })
+      });
+      const data = await response.json();
+      if (data && data.run) {
+        const output = data.run.stdout || data.run.stderr || "Code executed successfully (no output generated).";
+        setConsoleOutput(output);
+      } else {
+        setConsoleOutput("Execution Error: Failed to receive response from execution engine.");
+      }
+    } catch (err) {
+      setConsoleOutput("Execution Failed: " + err.message);
+    } finally {
+      setIsRunning(false);
+    }
+  };
+
   // 5. Native Clipboard Transfer Engine
   const copyToClipboard = (code, id) => {
     navigator.clipboard.writeText(code).then(() => {
@@ -101,7 +135,7 @@ export default function CodeRoomPage({ teamId = "team1" }) {
       <div className="content-max-width grid grid-cols-1 lg:grid-cols-12 gap-8">
         
         {/* Left Column: Multi-User Scratchpad Deck */}
-        <div className="lg:col-span-7 section-card flex flex-col h-[620px]">
+        <div className="lg:col-span-7 section-card flex flex-col h-[650px]">
           <div className="flex items-center justify-between mb-3">
             <h3 className="text-xl font-bold text-indigo flex items-center gap-2">
               <span className="material-symbols-outlined">terminal</span>
@@ -115,7 +149,7 @@ export default function CodeRoomPage({ teamId = "team1" }) {
                   handleScratchpadChange(scratchpadCode, e.target.value);
                 }}
                 className="input-field text-xs py-1 px-2"
-                style={{ width: 'auto' }}
+                style={{ width: 'auto', marginBottom: 0 }}
               >
                 <option value="javascript">JavaScript</option>
                 <option value="python">Python</option>
@@ -133,9 +167,30 @@ export default function CodeRoomPage({ teamId = "team1" }) {
           <textarea
             value={scratchpadCode}
             onChange={(e) => handleScratchpadChange(e.target.value, scratchpadMode)}
-            placeholder="// Paste dirty code arrays, debug API payloads, or collaborate on algorithmic setups here live..."
+            placeholder="// Paste code arrays, debug API payloads, or collaborate on algorithmic setups here live..."
             className="w-full flex-1 input-field font-mono text-xs p-4 bg-gray-900 text-green-400 border-none rounded-xl focus:ring-1 focus:ring-indigo-500 overflow-y-auto leading-relaxed resize-none shadow-inner"
+            style={{ minHeight: '180px' }}
           />
+          
+          <div className="mt-3 flex items-center justify-between gap-3">
+            <button
+              onClick={handleRunCode}
+              disabled={isRunning}
+              className="btn-success text-xs py-2 px-4 rounded-lg font-bold flex items-center gap-1.5"
+              style={{ width: 'max-content', margin: 0 }}
+            >
+              <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>play_arrow</span>
+              {isRunning ? 'Running...' : 'Run Code'}
+            </button>
+            <span className="text-xs text-gray-muted">Sandbox runtime supports JS & Python</span>
+          </div>
+
+          <div className="mt-3 flex-1 flex flex-col min-h-[140px] max-h-[220px]">
+            <label className="block text-gray-muted text-xs font-bold mb-1 uppercase">Sandbox Console Output</label>
+            <pre className="w-full flex-1 p-3 rounded-xl bg-gray-950 text-white font-mono text-[10px] overflow-y-auto leading-normal shadow-inner whitespace-pre-wrap select-all">
+              {consoleOutput || 'Console is clean. Run your Javascript or Python code above to view output.'}
+            </pre>
+          </div>
         </div>
 
         {/* Right Column: Snippet Preservation Form & Feed Vault */}

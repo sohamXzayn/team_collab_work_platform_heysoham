@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { db } from '../services/firebase';
-import { ref, onValue } from 'firebase/database';
+import { ref, onValue, push } from 'firebase/database';
 
 export default function Sidebar() {
   const { userData, logout } = useAuth();
@@ -10,6 +10,24 @@ export default function Sidebar() {
   const [teams, setTeams] = useState([]);
   const [channels, setChannels] = useState([]);
   const [activeTeamId, setActiveTeamId] = useState('team1'); // Defaulting to team1 for blueprint setup
+  const [showCreateChannel, setShowCreateChannel] = useState(false);
+  const [newChannelName, setNewChannelName] = useState('');
+
+  const handleCreateChannel = async (e) => {
+    e.preventDefault();
+    if (!newChannelName.trim()) return;
+    try {
+      const channelsRef = ref(db, 'channels');
+      await push(channelsRef, {
+        name: newChannelName.trim().toLowerCase().replace(/\s+/g, '-'),
+        teamId: activeTeamId
+      });
+      setNewChannelName('');
+      setShowCreateChannel(false);
+    } catch (err) {
+      console.error("Failed to create channel", err);
+    }
+  };
 
   // Fetch all teams the user belongs to
   useEffect(() => {
@@ -71,7 +89,36 @@ export default function Sidebar() {
       {/* Navigation Channels Stream */}
       <div className="flex-1 overflow-y-auto px-2 space-y-6">
         <div>
-          <p className="px-2 text-xs uppercase tracking-wider text-gray-500 font-bold mb-2">💬 Channels</p>
+          <div className="flex items-center justify-between px-2 mb-2">
+            <p className="text-xs uppercase tracking-wider text-gray-500 font-bold">💬 Channels</p>
+            <button 
+              onClick={() => setShowCreateChannel(prev => !prev)} 
+              className="text-gray-500 hover:text-white transition"
+              style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', display: 'flex', alignItems: 'center' }}
+              title="Create Channel"
+            >
+              <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>add</span>
+            </button>
+          </div>
+          {showCreateChannel && (
+            <form onSubmit={handleCreateChannel} className="px-2 mb-3 flex gap-1">
+              <input 
+                type="text" 
+                value={newChannelName}
+                onChange={(e) => setNewChannelName(e.target.value)}
+                placeholder="new-channel"
+                className="bg-gray-850 border border-gray-700 text-white rounded p-1 text-xs flex-1 focus:outline-none focus:border-indigo-500"
+                style={{ minWidth: '0' }}
+              />
+              <button 
+                type="submit" 
+                className="bg-indigo-600 hover:bg-indigo-500 text-white rounded px-2 text-xs font-bold transition"
+                style={{ border: 'none', cursor: 'pointer' }}
+              >
+                OK
+              </button>
+            </form>
+          )}
           <div className="space-y-0.5">
             {channels.map(ch => (
               <Link 

@@ -1,112 +1,116 @@
 :root {
-  /* Light Neumorphic Palette */
-  --nm-bg: #e0e5ec;
-  --nm-shadow-dark: #a3b1c6;
+  /* Modern Slate SaaS Light Palette */
+  --nm-bg: #f8fafc;
+  --nm-shadow-dark: #cbd5e1;
   --nm-shadow-light: #ffffff;
-  --nm-text: #4a5568;
+  --nm-text: #1e293b;
   --nm-accent: #4f46e5;
   --nm-accent-text: #ffffff;
   --nm-error-bg: #fef2f2;
   --nm-error-text: #dc2626;
+  --white: #ffffff;
 }
 
 [data-theme='dark'] {
-  /* Dark Neumorphic Palette */
-  --nm-bg: #1a202c;
-  --nm-shadow-dark: #0f172a;
-  --nm-shadow-light: #2d3748;
-  --nm-text: #e2e8f0;
-  --nm-accent: #818cf8;
-  --nm-accent-text: #1a202c;
+  /* Sleek SaaS Dark Palette */
+  --nm-bg: #0b0f19;
+  --nm-shadow-dark: #1e293b;
+  --nm-shadow-light: #111827;
+  --nm-text: #f1f5f9;
+  --nm-accent: #6366f1;
+  --nm-accent-text: #ffffff;
   --nm-error-bg: #450a0a;
   --nm-error-text: #fecaca;
+  --white: #111827;
 }
 
-/* Neumorphic Components */
+/* Modern Card Layouts */
 .auth-card {
   max-width: 28rem;
   width: 100%;
-  background-color: var(--nm-bg);
+  background-color: var(--white);
   padding: 2.5rem;
-  border-radius: 2.5rem;
-  /* Enhanced 3D Neumorphic lift */
-  box-shadow: 
-    16px 16px 32px var(--nm-shadow-dark), 
-    -16px -16px 32px var(--nm-shadow-light),
-    inset 1px 1px 2px rgba(255, 255, 255, 0.3),
-    inset -1px -1px 2px rgba(0, 0, 0, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 1.25rem;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -2px rgba(0, 0, 0, 0.02);
+}
+
+[data-theme='dark'] .auth-card {
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.2);
 }
 
 .brand-logo {
-  width: 72px;
-  height: 72px;
-  background-color: var(--nm-bg);
-  border-radius: 1.5rem;
+  width: 64px;
+  height: 64px;
+  background-color: rgba(79, 70, 229, 0.1);
+  border-radius: 1rem;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 2.5rem;
-  box-shadow: 
-    8px 8px 16px var(--nm-shadow-dark), 
-    -8px -8px 16px var(--nm-shadow-light);
-  line-height: 1;
+  font-size: 2.25rem;
+  border: 1px solid rgba(79, 70, 229, 0.2);
 }
 
+/* Flat Polished Inputs */
 .input-field {
   width: 100%;
-  background-color: var(--nm-bg);
+  background-color: var(--white);
   color: var(--nm-text);
-  border: none;
-  border-radius: 0.75rem;
-  padding: 0.875rem 1rem;
+  border: 1px solid var(--nm-shadow-dark);
+  border-radius: 0.5rem;
+  padding: 0.75rem 1rem;
   outline: none;
-  font-size: 1rem;
+  font-size: 0.95rem;
   line-height: 1.5;
-  margin-bottom: 1.25rem; /* Added for consistent vertical spacing */
-  /* Deep Recessed Neumorphic Effect */
-  box-shadow: 
-    inset 6px 6px 12px var(--nm-shadow-dark), 
-    inset -6px -6px 12px var(--nm-shadow-light);
+  margin-bottom: 1.25rem;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+[data-theme='dark'] .input-field {
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background-color: rgba(30, 41, 59, 0.4);
 }
 
 .input-field:focus {
-  box-shadow: 
-    inset 8px 8px 16px var(--nm-shadow-dark), 
-    inset -8px -8px 16px var(--nm-shadow-light);
+  border-color: var(--nm-accent);
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.15);
 }
 
+/* Flat Polished Buttons */
 .btn-outline {
   width: 100%;
-  background-color: var(--nm-bg);
-  color: var(--nm-accent);
-  font-weight: 700;
-  padding: 1rem;
-  border-radius: 1.5rem;
-  border: none;
+  background-color: var(--white);
+  color: var(--nm-text);
+  font-weight: 600;
+  padding: 0.75rem 1rem;
+  border-radius: 0.5rem;
+  border: 1px solid var(--nm-shadow-dark);
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 0.75rem;
+  gap: 0.5rem;
   cursor: pointer;
-  margin-bottom: 1.25rem; /* Added for consistent vertical spacing */
-  box-shadow: 
-    10px 10px 20px var(--nm-shadow-dark), 
-    -10px -10px 20px var(--nm-shadow-light);
+  margin-bottom: 1.25rem;
+  transition: background-color 0.2s ease, border-color 0.2s ease, transform 0.1s ease;
+}
+
+[data-theme='dark'] .btn-outline {
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background-color: rgba(30, 41, 59, 0.4);
 }
 
 .btn-outline:hover {
-  transform: scale(1.02);
-  box-shadow: 
-    12px 12px 24px var(--nm-shadow-dark), 
-    -12px -12px 24px var(--nm-shadow-light);
+  background-color: rgba(0, 0, 0, 0.02);
+  border-color: var(--nm-accent);
+}
+
+[data-theme='dark'] .btn-outline:hover {
+  background-color: rgba(255, 255, 255, 0.03);
 }
 
 .btn-outline:active {
-  transform: translateY(0);
-  box-shadow: 
-    inset 4px 4px 8px var(--nm-shadow-dark), 
-    inset -4px -4px 8px var(--nm-shadow-light);
+  transform: scale(0.98);
 }
 
 .error-alert {
@@ -114,14 +118,13 @@
   align-items: center;
   gap: 0.5rem;
   background-color: var(--nm-error-bg);
-  border: none;
+  border: 1px solid rgba(220, 38, 38, 0.15);
   color: var(--nm-error-text);
-  padding: 0.75rem;
-  border-radius: 0.75rem; /* Adjusted for consistency with input fields */
-  margin-bottom: 1.25rem; /* Adjusted for consistent vertical spacing */
+  padding: 0.75rem 1rem;
+  border-radius: 0.5rem;
+  margin-bottom: 1.25rem;
   font-size: 0.875rem;
   font-weight: 500;
-  box-shadow: inset 2px 2px 5px var(--nm-shadow-dark);
 }
 
 /* Remove bottom margin from the last child of auth-card to prevent extra space */

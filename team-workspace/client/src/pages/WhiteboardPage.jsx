@@ -1,4 +1,4 @@
-import React, { useRef, useState, useEffect } from 'react';
+import { useRef, useState, useEffect } from 'react';
 import { db } from '../services/firebase';
 import { ref, onValue, set, push, remove } from 'firebase/database';
 import { useAuth } from '../context/AuthContext';
@@ -63,9 +63,9 @@ export default function WhiteboardPage({ teamId = "team1" }) {
     return () => unsubscribe();
   }, [teamId]);
 
-  // Current stroke cache vector
-  let currentStrokePoints = [];
-  let currentStrokeId = null;
+  // Current stroke cache vector refs
+  const currentStrokePoints = useRef([]);
+  const currentStrokeId = useRef(null);
 
   // 3. User interaction: Pointer Down
   const startDrawing = ({ nativeEvent }) => {
@@ -73,15 +73,15 @@ export default function WhiteboardPage({ teamId = "team1" }) {
     setIsDrawing(true);
 
     const point = { x: offsetX, y: offsetY };
-    currentStrokePoints = [point];
+    currentStrokePoints.current = [point];
 
     // Generate unique slot on database coordinate array
     const strokeListRef = ref(db, `whiteboards/${teamId}/strokes`);
     const newStrokeRef = push(strokeListRef);
-    currentStrokeId = newStrokeRef.key;
+    currentStrokeId.current = newStrokeRef.key;
 
     set(newStrokeRef, {
-      points: currentStrokePoints,
+      points: currentStrokePoints.current,
       color: color,
       lineWidth: parseInt(lineWidth),
       tool: tool,
@@ -91,21 +91,21 @@ export default function WhiteboardPage({ teamId = "team1" }) {
 
   // 4. User interaction: Pointer Move (with active validation)
   const draw = ({ nativeEvent }) => {
-    if (!isDrawing || !currentStrokeId) return;
+    if (!isDrawing || !currentStrokeId.current) return;
     const { offsetX, offsetY } = nativeEvent;
 
     const point = { x: offsetX, y: offsetY };
-    currentStrokePoints.push(point);
+    currentStrokePoints.current.push(point);
 
     // Update the stroke point array vector sequentially in DB
-    set(ref(db, `whiteboards/${teamId}/strokes/${currentStrokeId}/points`), currentStrokePoints);
+    set(ref(db, `whiteboards/${teamId}/strokes/${currentStrokeId.current}/points`), currentStrokePoints.current);
   };
 
   // 5. User interaction: Pointer Release / Exit
   const stopDrawing = () => {
     setIsDrawing(false);
-    currentStrokeId = null;
-    currentStrokePoints = [];
+    currentStrokeId.current = null;
+    currentStrokePoints.current = [];
   };
 
   // 6. Clear Complete Multiuser Canvas System

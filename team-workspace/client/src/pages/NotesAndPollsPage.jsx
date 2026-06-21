@@ -4,7 +4,7 @@ import { ref, onValue, set, update, push } from 'firebase/database';
 import { useAuth } from '../context/AuthContext';
 
 export default function NotesAndPollsPage({ teamId = "team1" }) {
-  const { userData } = useAuth();
+  const { userData, currentUser } = useAuth();
   
   // Real-time Note States
   const [noteText, setNoteText] = useState('');
@@ -89,13 +89,21 @@ export default function NotesAndPollsPage({ teamId = "team1" }) {
   };
 
   // 5. cast vote logic
-  const handleCastVote = async (pollId, optionKey, currentVotes) => {
+  const handleCastVote = async (poll, optionKey, currentVotes) => {
+    if (!currentUser) return;
+    const userId = currentUser.uid;
+    if (poll.voters && poll.voters[userId]) {
+      return; // Already voted in this poll
+    }
+
     try {
-      await update(ref(db, `polls/${pollId}/options/${optionKey}`), {
-        votes: currentVotes + 1
-      });
+      // Record vote count and link voter uid to chosen option
+      const updates = {};
+      updates[`polls/${poll.id}/options/${optionKey}/votes`] = currentVotes + 1;
+      updates[`polls/${poll.id}/voters/${userId}`] = optionKey;
+      await update(ref(db), updates);
     } catch (err) {
-      console.error("Failed to commit vote transaction matrix", err);
+      console.error("Failed to commit vote transaction", err);
     }
   };
 
@@ -171,29 +179,67 @@ export default function NotesAndPollsPage({ teamId = "team1" }) {
 
           {/* Real-time Poll Feed */}
           <div className="space-y-4 flex-1">
-            {polls.map((poll) => (
-              <div key={poll.id} className="section-card">
-                <p className="font-bold text-gray-800 text-sm mb-3 flex items-start gap-1.5">
-                  <span className="material-symbols-outlined text-indigo" style={{ fontSize: '18px' }}>quiz</span>
-                  {poll.question}
-                </p>
-                <div className="space-y-2">
-                  {Object.keys(poll.options || {}).map((optKey) => {
-                    const opt = poll.options[optKey];
-                    return (
-                      <button
-                        key={optKey}
-                        onClick={() => handleCastVote(poll.id, optKey, opt.votes)}
-                        className="w-full text-left p-2.5 text-xs rounded-lg border border-gray-100 hover:bg-gray-50 flex justify-between items-center transition shadow-inner"
-                      >
-                        <span className="font-medium text-gray-700">{opt.text}</span>
-                        <span className="bg-indigo-50 text-indigo px-2 py-0.5 rounded-md font-bold">{opt.votes} votes</span>
-                      </button>
-                    );
-                  })}
+            {polls.map((poll) => {
+              const totalVotes = Object.values(poll.options || {}).reduce((sum, opt) => sum + opt.votes, 0);
+              const userVotedOption = poll.voters?.[currentUser?.uid];
+              const hasVoted = !!userVotedOption;
+
+              return (
+                <div key={poll.id} className="section-card">
+                  <p className="font-bold text-gray-800 text-sm mb-1 flex items-start gap-1.5">
+                    <span className="material-symbols-outlined text-indigo" style={{ fontSize: '18px' }}>quiz</span>
+                    {poll.question}
+                  </p>
+                  <p className="text-[10px] text-gray-muted mb-3 pl-6">
+                    Created by {poll.creator} | {totalVotes} {totalVotes === 1 ? 'vote' : 'votes'} cast
+                  </p>
+                  <div className="space-y-2">
+                    {Object.keys(poll.options || {}).map((optKey) => {
+                      const opt = poll.options[optKey];
+                      const pct = totalVotes > 0 ? Math.round((opt.votes / totalVotes) * 100) : 0;
+                      const isUserChoice = userVotedOption === optKey;
+
+                      return (
+                        <button
+                          key={optKey}
+                          onClick={() => handleCastVote(poll, optKey, opt.votes)}
+                          disabled={hasVoted}
+                          className="w-full text-left p-2.5 text-xs rounded-lg border flex justify-between items-center transition relative overflow-hidden"
+                          style={{
+                            background: 'none',
+                            borderColor: isUserChoice ? 'var(--nm-accent)' : 'rgba(0, 0, 0, 0.06)',
+                            cursor: hasVoted ? 'default' : 'pointer'
+                          }}
+                        >
+                          {/* Visual Percentage Progress Overlay */}
+                          <div 
+                            className="absolute top-0 left-0 bottom-0 transition-all duration-500" 
+                            style={{ 
+                              width: `${pct}%`, 
+                              backgroundColor: isUserChoice ? 'rgba(79, 70, 229, 0.15)' : 'rgba(0, 0, 0, 0.04)',
+                              zIndex: 1
+                            }}
+                          />
+                          
+                          <span className="font-medium text-gray-700 flex items-center gap-1.5" style={{ zIndex: 2 }}>
+                            {isUserChoice && <span className="material-symbols-outlined text-xs text-indigo" style={{ fontSize: '14px' }}>check_circle</span>}
+                            {opt.text}
+                          </span>
+                          
+                          <span className="text-[10px] font-bold px-2 py-0.5 rounded-md" style={{ 
+                            zIndex: 2,
+                            backgroundColor: isUserChoice ? 'var(--nm-accent)' : 'var(--nm-bg)',
+                            color: isUserChoice ? 'white' : 'var(--nm-text)'
+                          }}>
+                            {opt.votes} ({pct}%)
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
 
         </div>
