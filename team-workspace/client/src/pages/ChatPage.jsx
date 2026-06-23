@@ -4,9 +4,10 @@ import { db } from '../services/firebase';
 import { ref, push, onValue } from 'firebase/database';
 import { useAuth } from '../context/AuthContext';
 import Sidebar from '../components/Sidebar';
+import './neumorphism.css';
 
 export default function ChatPage() {
-  const { channelId } = useParams(); // Grabs active channel ID dynamically from route URL
+  const { channelId } = useParams(); 
   const { userData, currentUser } = useAuth();
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState('');
@@ -58,7 +59,7 @@ export default function ChatPage() {
       const messagePayload = {
         sender: userData?.name || currentUser?.email,
         text: newMessage.trim(),
-        timestamp: Date.now() // Matches blueprint architecture schema
+        timestamp: Date.now() 
       };
 
       await push(ref(db, `messages/${channelId}`), messagePayload);
@@ -69,41 +70,40 @@ export default function ChatPage() {
   };
 
   return (
-    <div className="flex h-screen bg-gray-950 overflow-hidden">
+    <div className="workspace-container">
       {/* Component Sidebar Shell Integration */}
       <Sidebar />
 
       {/* Main Chat Activity Pipeline Component Frame */}
-      <div className="flex-1 flex flex-col bg-gray-800 text-white h-full">
+      <div className="chat-main-pipeline">
+        
         {/* Top Header Navigation Meta Info Panel */}
-        <div className="h-14 border-b border-gray-700 flex items-center px-6 bg-gray-850 justify-between">
-          <div>
-            <span className="text-gray-400 font-light text-xl mr-1">#</span>
-            <span className="font-bold text-white tracking-wide">{channelName}</span>
+        <div className="chat-header">
+          <div className="chat-title-area">
+            <span className="chat-hash">#</span>
+            <span className="chat-channel-name">{channelName}</span>
           </div>
         </div>
 
         {/* Dynamic Interactive Message Thread Layout Container */}
-        <div className="flex-1 overflow-y-auto p-6 space-y-4">
+        <div className="chat-thread-container">
           {messages.length === 0 ? (
-            <div className="h-full flex flex-col items-center justify-center text-gray-500 text-sm">
-              <span className="text-3xl mb-1">💬</span>
+            <div className="chat-empty-state">
+              <span className="empty-icon">💬</span>
               <p>Welcome to the beginning of the #{channelName} channel.</p>
             </div>
           ) : (
             messages.map((msg) => {
               const isMe = msg.sender === (userData?.name || currentUser?.email);
               return (
-                <div key={msg.id} className={`flex flex-col ${isMe ? 'items-end' : 'items-start'}`}>
-                  <div className="flex items-center space-x-2 mb-0.5">
-                    <span className="text-xs font-bold text-indigo-400">{msg.sender}</span>
-                    <span className="text-[10px] text-gray-500">
+                <div key={msg.id} className={`message-row ${isMe ? 'msg-me' : 'msg-them'}`}>
+                  <div className="message-meta">
+                    <span className="message-sender">{msg.sender}</span>
+                    <span className="message-time">
                       {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                     </span>
                   </div>
-                  <div className={`max-w-md p-3 rounded-xl text-sm shadow ${
-                    isMe ? 'bg-indigo-600 text-white rounded-tr-none' : 'bg-gray-700 text-gray-100 rounded-tl-none'
-                  }`}>
+                  <div className={`message-bubble ${isMe ? 'bubble-me' : 'bubble-them'}`}>
                     {msg.text}
                   </div>
                 </div>
@@ -114,20 +114,25 @@ export default function ChatPage() {
         </div>
 
         {/* Lower Messaging Form Box Frame Controls */}
-        <div className="p-4 bg-gray-850 border-t border-gray-700">
-          <form onSubmit={handleSendMessage} className="flex space-x-2">
-            <input
-              type="text"
-              value={newMessage}
-              onChange={(e) => setNewMessage(e.target.value)}
-              placeholder={`Message #${channelName}...`}
-              className="flex-1 bg-gray-700 text-white rounded-lg px-4 py-2.5 text-sm border border-gray-600 focus:outline-none focus:border-indigo-500 transition placeholder-gray-500"
-            />
-            <button type="submit" className="bg-indigo-600 hover:bg-indigo-500 px-5 rounded-lg text-sm font-bold tracking-wide transition shadow">
-              Send
+        <div className="chat-input-bar">
+          <form onSubmit={handleSendMessage} className="chat-form-element">
+            <div className="input-group nm-inset" style={{ flex: 1 }}>
+              <span className="material-symbols-outlined input-icon">chat_bubble</span>
+              <input
+                type="text"
+                value={newMessage}
+                onChange={(e) => setNewMessage(e.target.value)}
+                placeholder={`Message #${channelName}...`}
+                className="input-field"
+                style={{ boxShadow: 'none' }}
+              />
+            </div>
+            <button type="submit" className="btn-primary chat-send-btn">
+              <span className="material-symbols-outlined">send</span>
             </button>
           </form>
         </div>
+
       </div>
     </div>
   );
