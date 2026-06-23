@@ -369,7 +369,7 @@
 }
 
 .message-bubble {
-  max-w: 65%;
+  max-width: 65%;
   padding: 0.85rem 1.2rem;
   font-size: 0.925rem;
   line-height: 1.4;

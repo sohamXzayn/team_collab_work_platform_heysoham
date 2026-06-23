@@ -1,8 +1,8 @@
 /* eslint-disable react-hooks/purity */
 import { useState, useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Link, useNavigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
-import { OrganizationProvider, useOrg } from './context/OrganizationContext'; // Added Organization Context
+import { OrganizationProvider, useOrg } from './context/OrganizationContext'; 
 import { db } from './services/firebase';
 import { ref, onValue, update } from 'firebase/database';
 import Login from './pages/Login';
@@ -16,21 +16,34 @@ import TasksPage from './pages/TasksPage';
 import NotesAndPollsPage from './pages/NotesAndPollsPage';
 import CodeRoomPage from './pages/CodeRoomPage';
 import WhiteboardPage from './pages/WhiteboardPage'; 
-import OrgSelectPage from './pages/OrgSelectPage'; // Added Org Setup Page
+import OrgSelectPage from './pages/OrgSelectPage'; 
 import NotificationToast from './components/NotificationToast';
-import './pages/neumorphism.css';
 
 // Redesigned premium Dashboard component
 function Dashboard() {
   const { currentUser, userData, logout } = useAuth();
-  const { currentOrg } = useOrg(); // Grab the active multi-tenant workspace context node
+  const { currentOrg } = useOrg(); 
+  const navigate = useNavigate();
+  
   const [tasks, setTasks] = useState([]);
   const [files, setFiles] = useState([]);
   const [usersCount, setUsersCount] = useState(0);
   const [channelsCount, setChannelsCount] = useState(0);
 
+  // States for Editing Profile Modal Subsystem
+  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
+  const [editName, setEditName] = useState('');
+  const [editBio, setEditBio] = useState('');
+  const [isSavingProfile, setIsSavingProfile] = useState(false);
+
   useEffect(() => {
-    // Prevent execution if no user is signed in or if no organization is selected yet
+    if (userData) {
+      setEditName(userData.name || '');
+      setEditBio(userData.bio || '');
+    }
+  }, [userData]);
+
+  useEffect(() => {
     if (!currentUser || !currentOrg) {
       setTasks([]);
       setFiles([]);
@@ -91,23 +104,43 @@ function Dashboard() {
     };
   }, [currentUser, currentOrg]);
 
+  // Handle saving modified user profile metadata back to global path reference
+  const handleSaveProfile = async (e) => {
+    e.preventDefault();
+    if (!currentUser?.uid || !editName.trim()) return;
+    setIsSavingProfile(true);
+
+    try {
+      const updates = {
+        [`users/${currentUser.uid}/name`]: editName.trim(),
+        [`users/${currentUser.uid}/bio`]: editBio.trim()
+      };
+
+      // Synchronize changes inside active membership lists if context available
+      if (currentOrg?.id) {
+        updates[`organizations/${currentOrg.id}/members/${currentUser.uid}/name`] = editName.trim();
+      }
+
+      await update(ref(db), updates);
+      setIsProfileModalOpen(false);
+    } catch (err) {
+      console.error("Failed to update account profile parameters:", err);
+    } finally {
+      setIsSavingProfile(false);
+    }
+  };
+
   // Derived calculations
   const totalTasksCount = tasks.length;
   const completedTasksCount = tasks.filter(t => t.status === 'Completed').length;
   const completionRate = totalTasksCount > 0 ? Math.round((completedTasksCount / totalTasksCount) * 100) : 0;
 
-  const totalKB = files.reduce((acc, f) => {
-    const sizeNum = parseFloat(f.fileSize) || 0;
-    return acc + sizeNum;
-  }, 0);
-  const storageDisplay = totalKB > 1024 
-    ? (totalKB / 1024).toFixed(1) + " MB" 
-    : totalKB.toFixed(1) + " KB";
+  const totalKB = files.reduce((acc, f) => acc + (parseFloat(f.fileSize) || 0), 0);
+  const storageDisplay = totalKB > 1024 ? (totalKB / 1024).toFixed(1) + " MB" : totalKB.toFixed(1) + " KB";
   const storagePercent = Math.min(Math.round((totalKB / (50 * 1024)) * 100), 100);
 
   const myPendingTasks = tasks.filter(t => t.assignedTo === currentUser?.uid && t.status !== 'Completed');
 
-  // Handle task status progression directly inside scoped organization tree path
   const handleUpdateTaskStatus = async (taskId, currentStatus) => {
     if (!currentOrg) return;
     let nextStatus = 'Pending';
@@ -148,8 +181,7 @@ function Dashboard() {
 
   const defaultActivities = [
     { id: 'mock-1', user: 'Sarah Jenkins', action: 'completed task', target: 'Auth Redesign', timestamp: Date.now() - 600000, initial: 'SJ' },
-    { id: 'mock-2', user: 'James Miller', action: 'uploaded file', target: 'marketing_assets.zip', timestamp: Date.now() - 3600000, initial: 'JM' },
-    { id: 'mock-3', user: 'Alex Rivera', action: 'created meeting poll', target: 'Product Launch Sync', timestamp: Date.now() - 10800000, initial: 'AR' }
+    { id: 'mock-2', user: 'James Miller', action: 'uploaded file', target: 'marketing_assets.zip', timestamp: Date.now() - 3600000, initial: 'JM' }
   ];
 
   const sortedActivities = [...dynamicActivities]
@@ -178,11 +210,20 @@ function Dashboard() {
             }}>
               {userData?.role || 'member'}
             </span>
+            {userData?.bio && <p className="profile-bio-text">{userData.bio}</p>}
             <p className="text-xs text-gray-muted mt-2 truncate w-full" style={{ maxWidth: '200px' }}>{currentUser?.email}</p>
+            
+            {/* Trigger Profile Customization Subsystem */}
+            <button 
+              onClick={() => setIsProfileModalOpen(true)} 
+              className="btn-profile-edit nm-raised"
+            >
+              <span className="material-symbols-outlined">edit_note</span>
+              <span>Edit Profile</span>
+            </button>
           </div>
 
           <nav className="flex flex-col gap-2">
-            {/* Added Workspace Swapping Selector Entry Point Link */}
             <Link to="/organizations" className="btn-outline" style={{ justifyContent: 'flex-start', padding: '0.75rem 1.25rem', borderRadius: '1rem', fontSize: '0.875rem', backgroundColor: 'rgba(79, 70, 229, 0.05)', border: '1px solid rgba(79, 70, 229, 0.15)' }}>
               <span className="material-symbols-outlined text-indigo" style={{ fontSize: '20px' }}>domain</span>
               <span className="font-bold">Switch Workspace</span>
@@ -230,18 +271,27 @@ function Dashboard() {
       {/* Main Workspace Stream Panel */}
       <main className="dashboard-main-panel">
         <header className="dash-header">
-          <div>
-            <span className="text-xs font-semibold text-indigo uppercase tracking-wider">
-              {currentOrg ? `Organization Context: ${currentOrg.name}` : 'Multi-Tenant Sandbox'}
-            </span>
-            <h1 className="font-bold text-2xl mt-0.5" style={{ color: 'var(--nm-text)' }}>Welcome back, {userData?.name || 'Teammate'}!</h1>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
+            {/* Standardized Neumorphic Back Navigation Mechanism */}
+            <button 
+              onClick={() => navigate(-1)} 
+              className="nm-back-action-btn"
+              title="Navigate Back"
+            >
+              <span className="material-symbols-outlined">arrow_back</span>
+            </button>
+            <div>
+              <span className="text-xs font-semibold text-indigo uppercase tracking-wider">
+                {currentOrg ? `Organization Context: ${currentOrg.name}` : 'Multi-Tenant Sandbox'}
+              </span>
+              <h1 className="font-bold text-2xl mt-0.5" style={{ color: 'var(--nm-text)' }}>Welcome back, {userData?.name || 'Teammate'}!</h1>
+            </div>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
             <span className="text-xs text-gray-muted">{new Date().toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' })}</span>
           </div>
         </header>
 
-        {/* Conditional rendering based on whether an organization environment is active */}
         {!currentOrg ? (
           <div className="section-card text-center py-12 flex flex-col items-center justify-center" style={{ minHeight: '300px' }}>
             <span className="material-symbols-outlined text-indigo text-5xl mb-3 animate-pulse">domain_disabled</span>
@@ -255,7 +305,6 @@ function Dashboard() {
           </div>
         ) : (
           <>
-            {/* Hero Banner Component */}
             <div className="dash-banner">
               <h2 className="dash-banner-title">{currentOrg.name} Hub Workspace</h2>
               <p style={{ margin: 0, opacity: 0.9, fontSize: '0.95rem', fontWeight: 500 }}>
@@ -263,7 +312,6 @@ function Dashboard() {
               </p>
             </div>
 
-            {/* Metrics Indicators Grid */}
             <section className="grid-metrics">
               <div className="stats-card-premium">
                 <div className="stats-icon-wrapper" style={{ backgroundColor: 'rgba(79, 70, 229, 0.12)', color: 'var(--nm-accent)' }}>
@@ -306,9 +354,7 @@ function Dashboard() {
               </div>
             </section>
 
-            {/* Two-Pane Detailed Section */}
             <div className="grid-sections">
-              {/* Left Column: Personal Pending Tasks */}
               <section className="section-card" style={{ padding: '2rem' }}>
                 <div className="flex justify-between items-center mb-6">
                   <h3 className="text-lg font-bold" style={{ color: 'var(--nm-text)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
@@ -351,7 +397,6 @@ function Dashboard() {
                 )}
               </section>
 
-              {/* Right Column: Live Team Activity Stream */}
               <section className="section-card" style={{ padding: '2rem' }}>
                 <h3 className="text-lg font-bold mb-6" style={{ color: 'var(--nm-text)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                   <span className="material-symbols-outlined text-indigo">bolt</span>
@@ -376,6 +421,71 @@ function Dashboard() {
           </>
         )}
       </main>
+
+      {/* Modern Neumorphic Profile Modification Modal Section */}
+      {isProfileModalOpen && (
+        <div className="nm-modal-backdrop">
+          <div className="nm-modal-surface">
+            <div className="nm-modal-header">
+              <h3 className="nm-modal-title">Edit Account Profile</h3>
+              <button 
+                onClick={() => setIsProfileModalOpen(false)} 
+                className="nm-modal-close-btn"
+              >
+                <span className="material-symbols-outlined">close</span>
+              </button>
+            </div>
+            
+            <form onSubmit={handleSaveProfile} className="nm-modal-form">
+              <div className="nm-modal-field-group">
+                <label className="nm-modal-input-label">Display Name</label>
+                <div className="nm-modal-input-wrapper nm-inset">
+                  <span className="material-symbols-outlined nm-input-icon">person</span>
+                  <input 
+                    type="text"
+                    value={editName}
+                    onChange={(e) => setEditName(e.target.value)}
+                    className="nm-modal-input"
+                    placeholder="Your name"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="nm-modal-field-group">
+                <label className="nm-modal-input-label">Bio / Status</label>
+                <div className="nm-modal-input-wrapper nm-inset">
+                  <span className="material-symbols-outlined nm-input-icon">description</span>
+                  <textarea 
+                    value={editBio}
+                    onChange={(e) => setEditBio(e.target.value)}
+                    className="nm-modal-textarea"
+                    placeholder="Tell the team about yourself or set your status..."
+                    rows={3}
+                  />
+                </div>
+              </div>
+
+              <div className="nm-modal-actions">
+                <button 
+                  type="button" 
+                  onClick={() => setIsProfileModalOpen(false)}
+                  className="nm-modal-btn-cancel"
+                >
+                  Cancel
+                </button>
+                <button 
+                  type="submit"
+                  disabled={isSavingProfile || !editName.trim()}
+                  className="nm-modal-btn-save"
+                >
+                  {isSavingProfile ? 'Saving...' : 'Save Changes'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -393,7 +503,7 @@ function App() {
   return (
     <Router>
       <AuthProvider>
-        <OrganizationProvider> {/* Core Multi-tenant Context Integration Wrapper */}
+        <OrganizationProvider> 
           
           <NotificationToast />
 
@@ -404,28 +514,24 @@ function App() {
           </button>
           
           <Routes>
-            {/* Public Routes */}
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
             <Route path="/banned" element={<PendingApproval />} />
 
-            {/* Fully Protected Member Routes */}
             <Route element={<ProtectedRoute />}>
               <Route path="/" element={<Dashboard />} />
-              <Route path="/organizations" element={<OrgSelectPage />} /> {/* Dedicated Workspace Hub Route */}
-              <Route path="/org-portal" element={<OrgSelectPage />} />   {/* Fallback alias protection route */}
+              <Route path="/organizations" element={<OrgSelectPage />} /> 
+              <Route path="/org-portal" element={<OrgSelectPage />} />   
               <Route path="/files" element={<FilesPage />} />
               <Route path="/chat" element={<ChatPage />} />
               <Route path="/chat/:channelId" element={<ChatPage />} />
               
-              {/* Feature components dynamically handle parameters or inherit OrgContext */}
               <Route path="/tasks" element={<TasksPage teamId="team1" />} />
               <Route path="/notes" element={<NotesAndPollsPage teamId="team1" />} />
               <Route path="/code" element={<CodeRoomPage teamId="team1" />} />
               <Route path="/canvas" element={<WhiteboardPage teamId="team1" />} />
             </Route>
 
-            {/* Admin Only Routes */}
             <Route element={<ProtectedRoute adminOnly={true} />}>
               <Route path="/admin" element={<AdminDashboard />} />
             </Route>
@@ -438,3 +544,236 @@ function App() {
 }
 
 export default App;
+
+/* ==========================================================================
+   LOCAL COMPONENT NEUMORPHIC STYLESHEET
+   ========================================================================== */
+const styles = `
+.nm-back-action-btn {
+  height: 2.5rem;
+  width: 2.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--nm-bg, #e0e8f6);
+  border: none;
+  border-radius: 0.85rem;
+  color: var(--nm-text, #2c3a57);
+  box-shadow: var(--nm-shadow-raised, 6px 6px 12px #b8c4d9, -6px -6px 12px #ffffff);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: var(--nm-border, 1px solid rgba(255,255,255,0.6));
+}
+.nm-back-action-btn:hover {
+  transform: translateY(-1px);
+  color: var(--nm-accent, #4f46e5);
+}
+.nm-back-action-btn:active {
+  box-shadow: var(--nm-shadow-inset, inset 3px 3px 6px #b8c4d9, inset -3px -3px 6px #ffffff);
+  transform: translateY(0);
+}
+
+.profile-section-dash {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 1.5rem 1rem;
+  margin-bottom: 2rem;
+  border-radius: 1.5rem;
+  background: var(--nm-bg, #e0e8f6);
+  box-shadow: var(--nm-shadow-inset, inset 4px 4px 8px #b8c4d9, inset -4px -4px 8px #ffffff);
+}
+
+.profile-bio-text {
+  font-size: 0.75rem;
+  color: var(--nm-text-muted, #6b7c96);
+  text-align: center;
+  margin: 0.75rem 0 0 0;
+  line-height: 1.3;
+  width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.btn-profile-edit {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin-top: 1rem;
+  padding: 0.45rem 1rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--nm-accent, #4f46e5);
+  background: var(--nm-bg, #e0e8f6);
+  border: var(--nm-border, 1px solid rgba(255,255,255,0.6));
+  border-radius: 0.75rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.btn-profile-edit span { font-size: 0.95rem; }
+.btn-profile-edit:hover {
+  transform: translateY(-1px);
+  background-color: rgba(255, 255, 255, 0.3);
+}
+
+.nm-modal-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(44, 58, 87, 0.25);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  animation: fadeIn 0.2s ease-out;
+}
+
+.nm-modal-surface {
+  width: 28rem;
+  background: var(--nm-bg, #e0e8f6);
+  border-radius: 1.75rem;
+  padding: 2rem;
+  border: var(--nm-border, 1px solid rgba(255,255,255,0.8));
+  box-shadow: 20px 20px 40px #b8c4d9, -20px -20px 40px #ffffff;
+  animation: scaleUp 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes scaleUp { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+.nm-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.5rem;
+}
+
+.nm-modal-title {
+  font-size: 1.2rem;
+  font-weight: 800;
+  color: var(--nm-text, #2c3a57);
+}
+
+.nm-modal-close-btn {
+  background: none;
+  border: none;
+  color: var(--nm-text-muted, #6b7c96);
+  cursor: pointer;
+}
+.nm-modal-close-btn span { font-size: 1.25rem; }
+
+.nm-modal-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.nm-modal-field-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.nm-modal-input-label {
+  font-size: 0.75rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  color: var(--nm-text-muted, #6b7c96);
+  padding-left: 0.25rem;
+}
+
+.nm-modal-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  border-radius: 1rem;
+  background: var(--nm-bg, #e0e8f6);
+  box-shadow: var(--nm-shadow-inset, inset 4px 4px 8px #b8c4d9, inset -4px -4px 8px #ffffff);
+}
+
+.nm-input-icon {
+  position: absolute;
+  left: 1rem;
+  color: var(--nm-text-muted, #6b7c96);
+  font-size: 1.15rem;
+  pointer-events: none;
+}
+
+.nm-modal-input {
+  width: 100%;
+  border: none;
+  background: transparent;
+  padding: 0.85rem 1rem 0.85rem 2.75rem;
+  font-size: 0.9rem;
+  color: var(--nm-text, #2c3a57);
+  font-weight: 600;
+  outline: none;
+}
+
+.nm-modal-textarea {
+  width: 100%;
+  border: none;
+  background: transparent;
+  padding: 0.85rem 1rem 0.85rem 2.75rem;
+  font-size: 0.9rem;
+  color: var(--nm-text, #2c3a57);
+  font-weight: 600;
+  outline: none;
+  resize: none;
+  font-family: inherit;
+}
+
+.nm-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.nm-modal-btn-cancel {
+  padding: 0.75rem 1.5rem;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--nm-text-muted, #6b7c96);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+}
+
+.nm-modal-btn-save {
+  padding: 0.75rem 1.5rem;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #ffffff;
+  background: var(--nm-accent, #4f46e5);
+  border: none;
+  border-radius: 1rem;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
+  transition: all 0.2s ease;
+}
+.nm-modal-btn-save:hover:not(:disabled) {
+  opacity: 0.95;
+  transform: translateY(-1px);
+}
+.nm-modal-btn-save:disabled {
+  background: var(--nm-bg, #e0e8f6);
+  color: var(--nm-text-muted, #6b7c96);
+  box-shadow: none;
+  border: var(--nm-border, 1px solid rgba(255,255,255,0.6));
+  cursor: not-allowed;
+}
+`;
+
+if (typeof document !== 'undefined') {
+  const styleTag = document.createElement('style');
+  styleTag.textContent = styles;
+  document.head.appendChild(styleTag);
+}

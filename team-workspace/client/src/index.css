@@ -436,7 +436,7 @@ body {
 }
 
 .activity-content {
-  flex-1: 1;
+  flex: 1;
   font-size: 0.825rem;
   line-height: 1.4;
 }

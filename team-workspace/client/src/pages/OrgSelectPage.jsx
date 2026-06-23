@@ -41,10 +41,24 @@ export default function OrgSelectPage() {
         {/* Left Side: Select / Switch Workspace */}
         <div className="md:col-span-7 flex flex-col space-y-6">
           <div className="section-card">
-            <h2 className="auth-title mb-2 text-left text-xl flex items-center gap-2">
-              <span className="material-symbols-outlined text-indigo">domain</span>
-              Your Multi-Tenant Organizations
-            </h2>
+            
+            {/* Header Layout Stack featuring Context Navigation */}
+            <div className="flex items-center gap-3 mb-4">
+              <button 
+                onClick={() => navigate(-1)} 
+                className="p-1.5 rounded-lg border border-gray-200 hover:border-gray-300 bg-white hover:bg-gray-50 text-gray-600 transition-all flex items-center justify-center shadow-sm"
+                title="Go Back"
+              >
+                <span className="material-symbols-outlined text-lg" style={{ fontSize: '18px' }}>arrow_back</span>
+              </button>
+              <div>
+                <h2 className="auth-title text-left text-xl flex items-center gap-2 m-0 p-0">
+                  <span className="material-symbols-outlined text-indigo">domain</span>
+                  Your Multi-Tenant Organizations
+                </h2>
+              </div>
+            </div>
+            
             <p className="text-xs text-gray-muted mb-6">Switch contexts to review alternative company branches, channels, and logs instantly.</p>
             
             {myOrganizations.length === 0 ? (

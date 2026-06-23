@@ -60,30 +60,29 @@ export function OrganizationProvider({ children }) {
     const orgId = newOrgRef.key;
     const timestamp = Date.now();
 
-    const orgPayload = {
-      name: orgName.trim(),
-      createdBy: currentUser.uid,
-      ownerName: userData?.name || 'Unknown Owner',
-      createdAt: timestamp,
-    };
-
-    const membersPayload = {
-      [currentUser.uid]: {
-        name: userData?.name || 'Owner',
-        email: currentUser.email,
-        role: 'owner',
-        joinedAt: timestamp
-      }
-    };
-
     const updates = {};
-    updates[`organizations/${orgId}`] = orgPayload;
-    updates[`organizations/${orgId}/members`] = membersPayload;
+    
+    // --- FLATTENED ROOT FIELDS TO PREVENT ANCESTOR PATH OVERLAP ERRORS ---
+    updates[`organizations/${orgId}/name`] = orgName.trim();
+    updates[`organizations/${orgId}/createdBy`] = currentUser.uid;
+    updates[`organizations/${orgId}/ownerName`] = userData?.name || 'Unknown Owner';
+    updates[`organizations/${orgId}/createdAt`] = timestamp;
+
+    // --- SEPARATED AT NESTED LEAF NODES ---
+    updates[`organizations/${orgId}/members/${currentUser.uid}`] = {
+      name: userData?.name || 'Owner',
+      email: currentUser.email,
+      role: 'owner',
+      joinedAt: timestamp
+    };
+
+    // --- ASSOCIATE WORKSPACE PATH WITHIN USER RECORD ---
     updates[`users/${currentUser.uid}/organizations/${orgId}`] = {
       name: orgName.trim(),
       role: 'owner'
     };
 
+    // Multi-path write execution
     await update(ref(db), updates);
     
     const newOrgObj = { id: orgId, name: orgName.trim(), role: 'owner' };
@@ -102,7 +101,9 @@ export function OrganizationProvider({ children }) {
         const users = snapshot.val();
         if (!users) return reject("No system users found");
 
-        const matchEntry = Object.entries(users).find(([uid, profile]) => profile.email === emailTarget.trim().toLowerCase());
+        const matchEntry = Object.entries(users).find(([uid, profile]) => 
+          profile.email === emailTarget.trim().toLowerCase()
+        );
         if (!matchEntry) return reject("User email profile not found");
 
         const [targetUid, targetProfile] = matchEntry;
