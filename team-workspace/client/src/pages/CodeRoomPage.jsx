@@ -119,44 +119,38 @@ export default function CodeRoomPage({ teamId = "team1" }) {
   // 5. Sandbox API code execution service using Judge0
 const handleRunCode = async () => {
   if (scratchpadMode !== 'javascript' && scratchpadMode !== 'python') {
-    setConsoleOutput("Code execution is only supported for JavaScript and Python languages.");
+    setConsoleOutput("Code execution is only supported for JavaScript and Python languages in this environment.");
     return;
   }
   
   setIsRunning(true);
-  setConsoleOutput("Encoding payloads and connecting to alternative sandbox cluster...\n");
-  
-  const languageId = scratchpadMode === 'javascript' ? 93 : 92;
+  setConsoleOutput("Transmitting code execution request to Render environment...\n");
 
   try {
-    // 1. Safe base64 conversion handling unicode layout variables natively
-    const encodedSource = btoa(unescape(encodeURIComponent(scratchpadCode)));
-
-    const response = await fetch("https://judge0-ce.p.sulu.sh/submissions?wait=true&base64_encoded=true", {
+    // Points directly to your secure Render application proxy pipeline routing
+    const response = await fetch("https://assignment-tracker-backend-lhhs.onrender.com/api/sandbox/run", {
       method: "POST",
       headers: { 
         "Content-Type": "application/json"
       },
       body: JSON.stringify({
-        source_code: encodedSource,
-        language_id: languageId,
-        stdin: ""
+        code: scratchpadCode,
+        language: scratchpadMode
       })
     });
 
     if (!response.ok) {
-      throw new Error(`Gateway returned HTTP Error ${response.status}`);
+      const errorText = await response.text();
+      setConsoleOutput(`Backend Service Error (${response.status}): ${errorText || 'Failed to process runtime execution.'}`);
+      return;
     }
 
     const data = await response.json();
     
     if (data) {
-      // 2. Decode the response strings safely back from Base64 configurations
-      const decodeProp = (str) => str ? decodeURIComponent(escape(atob(str))) : "";
-      
-      const stdout = decodeProp(data.stdout);
-      const stderr = decodeProp(data.stderr);
-      const compileOutput = decodeProp(data.compile_output);
+      const stdout = data.stdout || "";
+      const stderr = data.stderr || "";
+      const compileOutput = data.compile_output || "";
       
       if (compileOutput) {
         setConsoleOutput(`Compilation Error:\n${compileOutput}`);
@@ -165,14 +159,13 @@ const handleRunCode = async () => {
       } else if (stdout) {
         setConsoleOutput(stdout);
       } else {
-        setConsoleOutput(`Execution clean: ${data.status?.description || 'Success'}`);
+        setConsoleOutput(`Code executed successfully with status: ${data.status?.description || 'Success'} (no console prints generated).`);
       }
+    } else {
+      setConsoleOutput("Execution Error: Invalid structural data payload response schema returned.");
     }
   } catch (err) {
-    setConsoleOutput(
-      `Execution failed via public client pipeline: ${err.message}\n\n` +
-      `💡 Note: Public endpoints frequently experience heavy traffic. If this continues, route the execution through your Render Express backend.`
-    );
+    setConsoleOutput("Execution Hook Connection Failure: " + err.message);
   } finally {
     setIsRunning(false);
   }
