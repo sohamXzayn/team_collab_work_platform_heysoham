@@ -128,7 +128,7 @@ const handleRunCode = async () => {
 
   try {
     // Points directly to your secure Render application proxy pipeline routing
-    const response = await fetch("https://assignment-tracker-backend-lhhs.onrender.com/api/sandbox/run", {
+    const response = await fetch("https://team-collab-work-platform-heysoham.onrender.com/api/sandbox/run", {
       method: "POST",
       headers: { 
         "Content-Type": "application/json"
