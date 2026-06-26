@@ -1,13 +1,36 @@
-import React, { useState } from 'react';
-import { useOrg } from '../context/OrganizationContext';
+import React, { useState, useEffect } from 'react';
+import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import { useOrg } from '../context/OrganizationContext';
 
 export default function OrgSelectPage() {
-  const { myOrganizations, currentOrg, switchOrganization, createOrganization, inviteUserByEmail } = useOrg();
+  const { currentUser, userData } = useAuth();
+  const { myOrganizations, currentOrg, switchOrganization, createOrganization, inviteUserByEmail, updateOrganizationDetails } = useOrg();
   const [newOrgName, setNewOrgName] = useState('');
   const [inviteEmail, setInviteEmail] = useState('');
   const [inviteStatus, setInviteStatus] = useState({ type: '', msg: '' });
+  const [editName, setEditName] = useState('');
+  const [editLogo, setEditLogo] = useState('');
   const navigate = useNavigate();
+
+  // Populate edit fields when currentOrg changes
+  useEffect(() => {
+    if (currentOrg) {
+      setEditName(currentOrg.name || '');
+      setEditLogo(currentOrg.logo || '🏢');
+    }
+  }, [currentOrg]);
+
+  const handleUpdateDetails = async (e) => {
+    e.preventDefault();
+    if (!currentOrg) return;
+    try {
+      await updateOrganizationDetails(currentOrg.id, { name: editName.trim(), logo: editLogo.trim() });
+      setInviteStatus({ type: 'success', msg: 'Organization updated.' });
+    } catch (err) {
+      setInviteStatus({ type: 'error', msg: err.message || 'Update failed.' });
+    }
+  };
 
   const handleCreate = async (e) => {
     e.preventDefault();

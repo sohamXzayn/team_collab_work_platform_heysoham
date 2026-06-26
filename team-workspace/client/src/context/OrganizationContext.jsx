@@ -130,6 +130,30 @@ export function OrganizationProvider({ children }) {
     });
   };
 
+  const updateOrganizationDetails = async (orgId, newDetails) => {
+    if (!currentUser) throw new Error('Not authenticated');
+    // Verify ownership – simple check using currentOrg and creator uid
+    const targetOrg = myOrganizations.find(o => o.id === orgId);
+    if (!targetOrg) throw new Error('Organization not found');
+    const isOwner = targetOrg.createdBy === currentUser.uid || (targetOrg.role && targetOrg.role === 'owner');
+    if (!isOwner) throw new Error('Permission denied: only owners can edit');
+
+    const updates = {};
+    if (newDetails.name !== undefined) updates[`organizations/${orgId}/name`] = newDetails.name.trim();
+    if (newDetails.logo !== undefined) updates[`organizations/${orgId}/logo`] = newDetails.logo.trim();
+
+    // Update user's organization reference name if name changes
+    if (newDetails.name !== undefined) {
+      updates[`users/${currentUser.uid}/organizations/${orgId}/name`] = newDetails.name.trim();
+    }
+
+    await update(ref(db), updates);
+    // Reflect changes locally
+    if (currentOrg?.id === orgId) {
+      setCurrentOrg(prev => ({ ...prev, ...newDetails }));
+    }
+  };
+
   return (
     <OrganizationContext.Provider value={{
       myOrganizations,
@@ -137,7 +161,8 @@ export function OrganizationProvider({ children }) {
       loadingOrgs,
       switchOrganization,
       createOrganization,
-      inviteUserByEmail
+      inviteUserByEmail,
+      updateOrganizationDetails
     }}>
       {children}
     </OrganizationContext.Provider>
