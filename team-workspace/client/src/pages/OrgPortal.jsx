@@ -1,18 +1,54 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { db } from '../services/firebase';
-import { ref, push, set, update, get, query, orderByChild, equalTo } from 'firebase/database';
+import { ref, push, set, update, get, query, orderByChild, equalTo, onValue } from 'firebase/database';
 import './neumorphism.css';
 
 export default function OrgPortal() {
   const { currentUser, userData } = useAuth();
-  const [tab, setTab] = useState('join'); // 'join' or 'create'
+  const [tab, setTab] = useState('join'); // 'join', 'create', or 'manage'
   const [orgName, setOrgName] = useState('');
   const [inviteCode, setInviteCode] = useState('');
+  
+  // Track active organization ID and data directly from database snapshots
+  const [currentOrgId, setCurrentOrgId] = useState('');
+  const [activeOrgData, setActiveOrgData] = useState(null);
+  const [editName, setEditName] = useState('');
+  const [editLogo, setEditLogo] = useState('');
+
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+
+  // BULLETPROOF FIX: Listen directly to the user's database node for real-time changes
+  useEffect(() => {
+    if (!currentUser?.uid) return;
+
+    // Stream the activeOrgId directly from the user path to bypass context delays
+    const userActiveOrgRef = ref(db, `users/${currentUser.uid}/activeOrgId`);
+    
+    const unsubscribe = onValue(userActiveOrgRef, async (snapshot) => {
+      const activeOrgId = snapshot.val();
+      if (activeOrgId) {
+        setCurrentOrgId(activeOrgId);
+        try {
+          const orgSnapshot = await get(ref(db, `organizations/${activeOrgId}`));
+          if (orgSnapshot.exists()) {
+            const data = orgSnapshot.val();
+            setActiveOrgData(data);
+            setEditName(data.name || '');
+            setEditLogo(data.logo || '🏢');
+          }
+        } catch (err) {
+          console.error("Direct DB fetch error:", err);
+        }
+      }
+    });
+
+    return () => unsubscribe();
+  }, [currentUser]);
 
   // Helper to generate a random 6-character Invite Code
   const generateInviteCode = () => {
@@ -33,6 +69,7 @@ export default function OrgPortal() {
 
     try {
       setError('');
+      setSuccess('');
       setLoading(true);
 
       const code = generateInviteCode();
@@ -40,21 +77,32 @@ export default function OrgPortal() {
       const newOrgRef = push(orgsRef);
       const orgId = newOrgRef.key;
 
-      // 1. Create Organization profile
-      await set(ref(db, `organizations/${orgId}`), {
+      const newOrgPayload = {
         name: orgName.trim(),
-        owner: currentUser.uid,
+        createdBy: currentUser.uid,
+        ownerName: userData?.name || 'Soham',
         code: code,
-        timestamp: Date.now()
-      });
+        logo: '🏢',
+        createdAt: Date.now(),
+        members: {
+          [currentUser.uid]: {
+            email: currentUser.email || '',
+            joinedAt: Date.now(),
+            name: userData?.name || 'Soham',
+            role: 'owner'
+          }
+        }
+      };
 
-      // 2. Update user profile membership & activeOrgId
+      await set(ref(db, `organizations/${orgId}`), newOrgPayload);
+
       const userUpdates = {};
       userUpdates[`users/${currentUser.uid}/orgs/${orgId}`] = true;
       userUpdates[`users/${currentUser.uid}/activeOrgId`] = orgId;
       await update(ref(db), userUpdates);
 
-      navigate('/');
+      setSuccess('Organization setup complete!');
+      setTab('manage'); // Automatically open the settings panel to customize logo
     } catch (err) {
       console.error(err);
       setError('Failed to create organization. Please try again.');
@@ -72,9 +120,9 @@ export default function OrgPortal() {
 
     try {
       setError('');
+      setSuccess('');
       setLoading(true);
 
-      // Query database for an organization matching this invite code
       const orgsQuery = query(
         ref(db, 'organizations'),
         orderByChild('code'),
@@ -91,12 +139,17 @@ export default function OrgPortal() {
 
       const orgId = Object.keys(data)[0];
 
-      // Update user profile membership & activeOrgId
-      const userUpdates = {};
-      userUpdates[`users/${currentUser.uid}/orgs/${orgId}`] = true;
-      userUpdates[`users/${currentUser.uid}/activeOrgId`] = orgId;
-      await update(ref(db), userUpdates);
+      const updates = {};
+      updates[`users/${currentUser.uid}/orgs/${orgId}`] = true;
+      updates[`users/${currentUser.uid}/activeOrgId`] = orgId;
+      updates[`organizations/${orgId}/members/${currentUser.uid}`] = {
+        email: currentUser.email || '',
+        joinedAt: Date.now(),
+        name: userData?.name || 'Teammate',
+        role: 'member'
+      };
 
+      await update(ref(db), updates);
       navigate('/');
     } catch (err) {
       console.error(err);
@@ -106,22 +159,68 @@ export default function OrgPortal() {
     }
   };
 
+  const handleUpdateOrgDetails = async (e) => {
+    e.preventDefault();
+    if (!editName.trim()) {
+      setError('Organization name cannot be blank.');
+      return;
+    }
+
+    const targetOrgId = currentOrgId || userData?.activeOrgId;
+    if (!targetOrgId) {
+      setError('No active workspace target discovered.');
+      return;
+    }
+
+    try {
+      setError('');
+      setSuccess('');
+      setLoading(true);
+
+      const updates = {};
+      updates[`organizations/${targetOrgId}/name`] = editName.trim();
+      updates[`organizations/${targetOrgId}/logo`] = editLogo.trim();
+
+      await update(ref(db), updates);
+      setSuccess('Organization details updated successfully!');
+      
+      setActiveOrgData(prev => ({ ...prev, name: editName.trim(), logo: editLogo.trim() }));
+    } catch (err) {
+      console.error(err);
+      setError('Failed to update organization records.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Safe checks using live fetched data nodes
+  const isOwner = activeOrgData?.createdBy === currentUser?.uid || 
+                  activeOrgData?.members?.[currentUser?.uid]?.role === 'owner';
+
   return (
     <div className="auth-wrapper">
       <div className="auth-card" style={{ maxWidth: '32rem' }}>
         <div className="brand-logo-container">
-          <div className="brand-logo" style={{ background: 'rgba(79, 70, 229, 0.1)', color: 'var(--nm-accent)' }}>🏢</div>
+          <div className="brand-logo" style={{ background: 'rgba(79, 70, 229, 0.1)', color: 'var(--nm-accent)', fontSize: '1.75rem' }}>
+            {editLogo || '🏢'}
+          </div>
         </div>
 
-        <h2 className="auth-title" style={{ marginBottom: '1.5rem' }}>Welcome to CollabWorkspace</h2>
+        <h2 className="auth-title" style={{ marginBottom: '1.5rem' }}>
+          {tab === 'manage' && activeOrgData ? `Manage ${activeOrgData.name}` : 'Welcome to CollabWorkspace'}
+        </h2>
+        
         <p className="text-sm text-gray-muted text-center mb-6">
-          To get started, please join an existing organization using an invite code or create a new organization for your team.
+          {tab === 'manage' 
+            ? 'Modify your workspace parameters, branding labels, and icon aesthetics below.'
+            : 'To get started, please join an existing organization using an invite code or create a new organization for your team.'}
         </p>
 
         {/* Tab Header Selector */}
         <div className="flex gap-2 mb-6" style={{ borderBottom: '1px solid var(--nm-shadow-dark)', paddingBottom: '0.75rem' }}>
           <button
-            onClick={() => { setTab('join'); setError(''); }}
+            type="button"
+            onClick={() => { setTab('join'); setError(''); setSuccess(''); }}
             className="flex-1 py-2 font-bold text-xs rounded-lg transition"
             style={{
               border: 'none',
@@ -133,7 +232,8 @@ export default function OrgPortal() {
             Join Organization
           </button>
           <button
-            onClick={() => { setTab('create'); setError(''); }}
+            type="button"
+            onClick={() => { setTab('create'); setError(''); setSuccess(''); }}
             className="flex-1 py-2 font-bold text-xs rounded-lg transition"
             style={{
               border: 'none',
@@ -144,11 +244,29 @@ export default function OrgPortal() {
           >
             Create Organization
           </button>
+          
+          {/* Settings tab now unlocks smoothly without context delays */}
+          {isOwner && (
+            <button
+              type="button"
+              onClick={() => { setTab('manage'); setError(''); setSuccess(''); }}
+              className="flex-1 py-2 font-bold text-xs rounded-lg transition"
+              style={{
+                border: 'none',
+                cursor: 'pointer',
+                backgroundColor: tab === 'manage' ? 'var(--nm-theme-error, #f43f5e)' : 'transparent',
+                color: tab === 'manage' ? 'white' : 'var(--nm-text)'
+              }}
+            >
+              ⚙️ Settings
+            </button>
+          )}
         </div>
 
-        {error && <div className="error-alert">{error}</div>}
+        {error && <div className="error-alert" style={{ marginBottom: '1rem' }}>{error}</div>}
+        {success && <div className="success-alert" style={{ marginBottom: '1rem', color: 'var(--emerald)', fontWeight: 'bold', fontSize: '0.85rem', textAlign: 'center' }}>{success}</div>}
 
-        {tab === 'join' ? (
+        {tab === 'join' && (
           <form onSubmit={handleJoinOrg} className="auth-form">
             <div className="auth-input-group">
               <label className="auth-label">Invite Code</label>
@@ -166,7 +284,9 @@ export default function OrgPortal() {
               {loading ? 'Joining Org...' : 'Join Workspace'}
             </button>
           </form>
-        ) : (
+        )}
+
+        {tab === 'create' && (
           <form onSubmit={handleCreateOrg} className="auth-form">
             <div className="auth-input-group">
               <label className="auth-label">Organization Name</label>
@@ -182,6 +302,59 @@ export default function OrgPortal() {
             <button disabled={loading} type="submit" className="btn-primary" style={{ margin: 0 }}>
               {loading ? 'Creating Org...' : 'Create & Setup Workspace'}
             </button>
+          </form>
+        )}
+
+        {tab === 'manage' && isOwner && (
+          <form onSubmit={handleUpdateOrgDetails} className="auth-form">
+            <div className="auth-input-group">
+              <label className="auth-label">Workspace Branding Name</label>
+              <input
+                type="text"
+                required
+                value={editName}
+                onChange={(e) => setEditName(e.target.value)}
+                className="input-field"
+                placeholder="Organization Name"
+              />
+            </div>
+
+            <div className="auth-input-group">
+              <label className="auth-label">Workspace Icon / Logo Symbol</label>
+              <input
+                type="text"
+                required
+                value={editLogo}
+                onChange={(e) => setEditLogo(e.target.value)}
+                className="input-field"
+                placeholder="e.g. 🏢, 🚀, 💻 or an image URL string"
+              />
+            </div>
+
+            <div className="auth-input-group" style={{ marginBottom: '1.5rem' }}>
+              <label className="auth-label" style={{ opacity: 0.6 }}>Active System Invite Code</label>
+              <input
+                type="text"
+                disabled
+                value={activeOrgData?.code || ''}
+                className="input-field"
+                style={{ cursor: 'not-allowed', opacity: 0.5, fontWeight: 'bold', letterSpacing: '0.05em' }}
+              />
+            </div>
+
+            <div className="flex gap-3">
+              <button 
+                type="button" 
+                onClick={() => navigate('/')} 
+                className="btn-primary" 
+                style={{ margin: 0, backgroundColor: 'transparent', color: 'var(--nm-text)', border: '1px solid var(--border-color)' }}
+              >
+                Exit to Home
+              </button>
+              <button disabled={loading} type="submit" className="btn-primary" style={{ margin: 0, flex: 2 }}>
+                {loading ? 'Saving Changes...' : 'Save Workspace Configurations'}
+              </button>
+            </div>
           </form>
         )}
       </div>

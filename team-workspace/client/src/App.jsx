@@ -306,7 +306,7 @@ function Dashboard() {
         ) : (
           <>
             <div className="dash-banner">
-              <h2 className="dash-banner-title">{currentOrg.name} Hub Workspace</h2>
+              <h2 className="dash-banner-title">{currentOrg.name} Workspace</h2>
               <p style={{ margin: 0, opacity: 0.9, fontSize: '0.95rem', fontWeight: 500 }}>
                 Co-ordinate schedules, dispatch tasks, exchange code snippets, and review analytics instantly inside your workspace.
               </p>
