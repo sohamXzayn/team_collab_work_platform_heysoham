@@ -117,59 +117,68 @@ export default function CodeRoomPage({ teamId = "team1" }) {
   };
 
   // 5. Sandbox API code execution service using Judge0
-const handleRunCode = async () => {
-  if (scratchpadMode !== 'javascript' && scratchpadMode !== 'python') {
-    setConsoleOutput("Code execution is only supported for JavaScript and Python languages in this environment.");
-    return;
-  }
-  
-  setIsRunning(true);
-  setConsoleOutput("Transmitting code execution request to Render environment...\n");
-
-  try {
-    // Points directly to your secure Render application proxy pipeline routing
-    const response = await fetch("https://team-collab-work-platform-heysoham.onrender.com/api/sandbox/run", {
-      method: "POST",
-      headers: { 
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        code: scratchpadCode,
-        language: scratchpadMode
-      })
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      setConsoleOutput(`Backend Service Error (${response.status}): ${errorText || 'Failed to process runtime execution.'}`);
+  const handleRunCode = async () => {
+    if (scratchpadMode !== 'javascript' && scratchpadMode !== 'python') {
+      setConsoleOutput("Code execution is only supported for JavaScript and Python languages in this environment.");
       return;
     }
-
-    const data = await response.json();
     
-    if (data) {
-      const stdout = data.stdout || "";
-      const stderr = data.stderr || "";
-      const compileOutput = data.compile_output || "";
-      
-      if (compileOutput) {
-        setConsoleOutput(`Compilation Error:\n${compileOutput}`);
-      } else if (stderr) {
-        setConsoleOutput(`Runtime Error:\n${stderr}`);
-      } else if (stdout) {
-        setConsoleOutput(stdout);
-      } else {
-        setConsoleOutput(`Code executed successfully with status: ${data.status?.description || 'Success'} (no console prints generated).`);
+    setIsRunning(true);
+    setConsoleOutput("Transmitting code execution request...\n");
+
+    try {
+      // Dynamic Environment Routing: Maps seamlessly whether you are testing on localhost, local IP network, or production Netlify.
+      const isLocal = 
+        window.location.hostname === 'localhost' || 
+        window.location.hostname === '127.0.0.1' || 
+        window.location.hostname.startsWith('192.168.');
+
+      const API_BASE_URL = isLocal 
+        ? "http://localhost:5000" 
+        : "https://team-collab-work-platform-heysoham.onrender.com";
+
+      const response = await fetch(`${API_BASE_URL}/api/sandbox/run`, {
+        method: "POST",
+        headers: { 
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          code: scratchpadCode,
+          language: scratchpadMode
+        })
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        setConsoleOutput(`Backend Service Error (${response.status}): ${errorText || 'Failed to process runtime execution.'}`);
+        return;
       }
-    } else {
-      setConsoleOutput("Execution Error: Invalid structural data payload response schema returned.");
+
+      const data = await response.json();
+      
+      if (data) {
+        const stdout = data.stdout || "";
+        const stderr = data.stderr || "";
+        const compileOutput = data.compile_output || "";
+        
+        if (compileOutput) {
+          setConsoleOutput(`Compilation Error:\n${compileOutput}`);
+        } else if (stderr) {
+          setConsoleOutput(`Runtime Error:\n${stderr}`);
+        } else if (stdout) {
+          setConsoleOutput(stdout);
+        } else {
+          setConsoleOutput(`Code executed successfully with status: ${data.status?.description || 'Success'} (no console prints generated).`);
+        }
+      } else {
+        setConsoleOutput("Execution Error: Invalid structural data payload response schema returned.");
+      }
+    } catch (err) {
+      setConsoleOutput("Execution Hook Connection Failure: " + err.message);
+    } finally {
+      setIsRunning(false);
     }
-  } catch (err) {
-    setConsoleOutput("Execution Hook Connection Failure: " + err.message);
-  } finally {
-    setIsRunning(false);
-  }
-};
+  };
 
   // 6. Native Clipboard Transfer Engine
   const copyToClipboard = (code, id) => {
@@ -323,5 +332,5 @@ const handleRunCode = async () => {
         </div>
       </div>
     </div>
-  );
+  ); 
 }
