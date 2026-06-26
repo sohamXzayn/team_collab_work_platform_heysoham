@@ -159,34 +159,73 @@ export default function OrgSelectPage() {
           {/* Invitation Utility (Only active if an organization is loaded) */}
           {currentOrg && (
             <div className="section-card">
-              <h3 className="text-sm font-bold text-gray-800 mb-1 flex items-center gap-1.5">
-                <span className="material-symbols-outlined text-indigo" style={{ fontSize: '18px' }}>person_add</span>
-                Invite to {currentOrg.name}
-              </h3>
-              <p className="text-[11px] text-gray-muted mb-4">Type the exact registry registration email of the peer you wish to invite.</p>
-              
-              <form onSubmit={handleInvite} className="space-y-3">
-                <input
-                  type="email"
-                  value={inviteEmail}
-                  onChange={(e) => setInviteEmail(e.target.value)}
-                  placeholder="teammate@company.com"
-                  className="input-field text-xs py-2.5"
-                  required
-                />
-                <button type="submit" className="w-full btn-outline text-xs py-2 font-bold flex items-center justify-center gap-1">
-                  <span className="material-symbols-outlined text-sm" style={{ fontSize: '16px' }}>send</span> Dispatch Invite
-                </button>
-              </form>
-
-              {inviteStatus.msg && (
-                <div className={`mt-3 p-2.5 rounded-lg text-[11px] font-medium border text-center ${
-                  inviteStatus.type === 'success' ? 'bg-emerald-50 text-emerald-700 border-emerald-100' :
-                  inviteStatus.type === 'error' ? 'bg-rose-50 text-rose-700 border-rose-100' :
-                  'bg-indigo-50 text-indigo-700 border-indigo-100'
-                }`}>
-                  {inviteStatus.msg}
-                </div>
+              {myOrganizations.find(o => o.id === currentOrg?.id)?.role === 'owner' ? (
+                <>
+                  <h3 className="text-sm font-bold text-gray-800 mb-1 flex items-center gap-1.5">
+                    <span className="material-symbols-outlined text-indigo" style={{ fontSize: '18px' }}>edit</span>
+                    Edit {currentOrg.name}
+                  </h3>
+                  <form onSubmit={handleUpdateDetails} className="space-y-3">
+                    <input
+                      type="text"
+                      value={editName}
+                      onChange={(e) => setEditName(e.target.value)}
+                      placeholder="Organization Name"
+                      className="input-field text-xs py-2.5"
+                      required
+                    />
+                    <input
+                      type="text"
+                      value={editLogo}
+                      onChange={(e) => setEditLogo(e.target.value)}
+                      placeholder="Logo (emoji or URL)"
+                      className="input-field text-xs py-2.5"
+                      required
+                    />
+                    <button type="submit" className="w-full btn-outline text-xs py-2 font-bold flex items-center justify-center gap-1">
+                      <span className="material-symbols-outlined text-sm" style={{ fontSize: '16px' }}>save</span> Save Changes
+                    </button>
+                  </form>
+                  {inviteStatus.msg && (
+                    <div className={`mt-3 p-2.5 rounded-lg text-[11px] font-medium border text-center ${
+                      inviteStatus.type === 'success' ? 'bg-emerald-50 text-emerald-700 border-emerald-100' :
+                      inviteStatus.type === 'error' ? 'bg-rose-50 text-rose-700 border-rose-100' :
+                      'bg-indigo-50 text-indigo-700 border-indigo-100'
+                    }`}>
+                      {inviteStatus.msg}
+                    </div>
+                  )}
+                </>
+              ) : (
+                <>
+                  <h3 className="text-sm font-bold text-gray-800 mb-1 flex items-center gap-1.5">
+                    <span className="material-symbols-outlined text-indigo" style={{ fontSize: '18px' }}>person_add</span>
+                    Invite to {currentOrg.name}
+                  </h3>
+                  <p className="text-[11px] text-gray-muted mb-4">Type the exact registry registration email of the peer you wish to invite.</p>
+                  <form onSubmit={handleInvite} className="space-y-3">
+                    <input
+                      type="email"
+                      value={inviteEmail}
+                      onChange={(e) => setInviteEmail(e.target.value)}
+                      placeholder="teammate@company.com"
+                      className="input-field text-xs py-2.5"
+                      required
+                    />
+                    <button type="submit" className="w-full btn-outline text-xs py-2 font-bold flex items-center justify-center gap-1">
+                      <span className="material-symbols-outlined text-sm" style={{ fontSize: '16px' }}>send</span> Dispatch Invite
+                    </button>
+                  </form>
+                  {inviteStatus.msg && (
+                    <div className={`mt-3 p-2.5 rounded-lg text-[11px] font-medium border text-center ${
+                      inviteStatus.type === 'success' ? 'bg-emerald-50 text-emerald-700 border-emerald-100' :
+                      inviteStatus.type === 'error' ? 'bg-rose-50 text-rose-700 border-rose-100' :
+                      'bg-indigo-50 text-indigo-700 border-indigo-100'
+                    }`}>
+                      {inviteStatus.msg}
+                    </div>
+                  )}
+                </>
               )}
             </div>
           )}

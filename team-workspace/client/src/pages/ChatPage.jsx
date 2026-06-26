@@ -5,6 +5,7 @@ import { ref, push, onValue } from 'firebase/database';
 import { useAuth } from '../context/AuthContext';
 import { useOrg } from '../context/OrganizationContext';
 import Sidebar from '../components/Sidebar';
+import BackButton from '../components/BackButton';
 
 export default function ChatPage() {
   const { channelId } = useParams(); 
@@ -37,20 +38,26 @@ export default function ChatPage() {
     const msgRef = ref(db, `organizations/${currentOrg.id}/messages/${channelId}`);
     const unsubscribe = onValue(msgRef, (snapshot) => {
       const data = snapshot.val();
-      if (data) {
-        const textStream = Object.keys(data).map(key => ({
-          id: key,
-          ...data[key]
-        }));
-        setMessages(textStream);
-      } else {
+      if (!data) {
         setMessages([]);
+        setLoading(false);
+        return;
       }
+
+      const textStream = Object.keys(data).map((key) => ({
+        id: key,
+        ...data[key]
+      }));
+
+      // Stable ordering: by timestamp (undefined timestamps go last)
+      textStream.sort((a, b) => (a.timestamp ?? 0) - (b.timestamp ?? 0));
+
+      setMessages(textStream);
       setLoading(false);
     });
 
     return () => unsubscribe();
-  }, [channelId, currentOrg]);
+  }, [channelId, currentOrg?.id]);
 
   // 3. Auto Scroll View Window Engine
   useEffect(() => {
@@ -67,10 +74,13 @@ export default function ChatPage() {
         sender: userData?.name || currentUser?.email || 'Anonymous',
         senderUid: currentUser?.uid,
         text: newMessage.trim(),
-        timestamp: Date.now() 
+        timestamp: Date.now()
       };
 
-      await push(ref(db, `organizations/${currentOrg.id}/messages/${channelId}`), messagePayload);
+      await push(
+        ref(db, `organizations/${currentOrg.id}/messages/${channelId}`),
+        messagePayload
+      );
       setNewMessage('');
     } catch (err) {
       console.error("Message broadcast error fail sequence:", err);
@@ -82,8 +92,19 @@ export default function ChatPage() {
       <Sidebar />
 
       <div className="chat-main-pipeline">
+        {!currentOrg?.id || !channelId ? (
+          <div className="chat-empty-state">
+            <span className="material-symbols-outlined text-indigo text-5xl mb-3" style={{ opacity: 0.8 }}>domain_disabled</span>
+            <p style={{ marginTop: '0.75rem' }}>
+              Select an organization and a channel to start chatting.
+            </p>
+          </div>
+        ) : null}
         {/* Top Header Navigation Meta Info Panel */}
         <div className="chat-header">
+          <div style={{ marginRight: '0.75rem' }}>
+            <BackButton label="Back" />
+          </div>
           <div className="chat-title-area">
             <span className="chat-hash">#</span>
             <span className="chat-channel-name">{channelName}</span>
@@ -95,7 +116,7 @@ export default function ChatPage() {
         </div>
 
         {/* Dynamic Interactive Message Thread Layout Container */}
-        <div className="chat-thread-container">
+        <div className="chat-thread-container" style={{ display: (!currentOrg?.id || !channelId) ? 'none' : 'flex' }}>
           {loading ? (
             <div className="chat-empty-state">
               <span className="material-symbols-outlined animate-spin" style={{ fontSize: '32px', color: 'var(--nm-accent)' }}>sync</span>
@@ -135,12 +156,19 @@ export default function ChatPage() {
               <input
                 type="text"
                 value={newMessage}
-                onChange={(e) => setNewMessage(e.target.value)}
+                onChange={(e) => {
+                  setNewMessage(e.target.value);
+                }}
                 placeholder={`Message #${channelName}...`}
                 className="chat-input-field"
               />
             </div>
-            <button type="submit" className="chat-send-btn" disabled={!newMessage.trim()}>
+            <button
+              type="submit"
+              className="chat-send-btn"
+              disabled={!newMessage.trim() || !currentOrg?.id || !channelId}
+              title={!currentOrg?.id ? 'Select an organization' : !channelId ? 'Select a channel' : ''}
+            >
               <span className="material-symbols-outlined">send</span>
             </button>
           </form>

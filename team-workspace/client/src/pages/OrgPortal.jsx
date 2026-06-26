@@ -178,13 +178,23 @@ export default function OrgPortal() {
       setLoading(true);
 
       const updates = {};
-      updates[`organizations/${targetOrgId}/name`] = editName.trim();
-      updates[`organizations/${targetOrgId}/logo`] = editLogo.trim();
+      const nextName = editName.trim();
+      const nextLogo = editLogo.trim();
+
+      updates[`organizations/${targetOrgId}/name`] = nextName;
+      updates[`organizations/${targetOrgId}/logo`] = nextLogo;
+
+      // Keep user's org list entry in sync for immediate UI updates elsewhere
+      // (used by OrgSelectPage / sidebar org switch)
+      if (currentUser?.uid) {
+        updates[`users/${currentUser.uid}/organizations/${targetOrgId}/name`] = nextName;
+      }
 
       await update(ref(db), updates);
       setSuccess('Organization details updated successfully!');
-      
-      setActiveOrgData(prev => ({ ...prev, name: editName.trim(), logo: editLogo.trim() }));
+
+      setActiveOrgData(prev => ({ ...prev, name: nextName, logo: nextLogo }));
+
     } catch (err) {
       console.error(err);
       setError('Failed to update organization records.');
@@ -193,9 +203,21 @@ export default function OrgPortal() {
     }
   };
 
-  // Safe checks using live fetched data nodes
-  const isOwner = activeOrgData?.createdBy === currentUser?.uid || 
-                  activeOrgData?.members?.[currentUser?.uid]?.role === 'owner';
+  // Ownership: prefer the membership record stored on the user node.
+  // This is more reliable than depending on organization snapshot shape.
+  const isOwner =
+    !!(currentUser?.uid &&
+      activeOrgData?.createdBy === currentUser?.uid);
+
+  // If org snapshot doesn't include member roles, fall back to the safer membership field.
+  // (We don't have that data in this component unless organization snapshot contains it,
+  //  so we keep a second check for org snapshot member role.)
+  const isOwnerByOrgMembers =
+    !!(activeOrgData?.members &&
+      activeOrgData?.members?.[currentUser?.uid]?.role === 'owner');
+
+  const canEditOrgDetails = isOwner || isOwnerByOrgMembers;
+
 
   return (
     <div className="auth-wrapper">
@@ -246,7 +268,8 @@ export default function OrgPortal() {
           </button>
           
           {/* Settings tab now unlocks smoothly without context delays */}
-          {isOwner && (
+          {canEditOrgDetails && (
+
             <button
               type="button"
               onClick={() => { setTab('manage'); setError(''); setSuccess(''); }}
