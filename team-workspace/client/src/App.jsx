@@ -564,11 +564,7 @@ function App() {
           
           <NotificationToast />
 
-          <button onClick={toggleTheme} className="theme-toggle flex items-center justify-center">
-            <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>
-              {theme === 'light' ? 'dark_mode' : 'light_mode'}
-            </span>
-          </button>
+         
           
           <Routes>
             <Route path="/login" element={<Login />} />
