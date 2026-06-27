@@ -25,6 +25,11 @@ import sadLogo from './assets/sad.png';
 function Dashboard() {
   const { currentUser, userData, logout } = useAuth();
   const { currentOrg } = useOrg(); 
+
+  // Static snapshot for debugging Firebase activity rendering
+  // (helps confirm whether currentOrg is set and listeners fire)
+  const [debug, setDebug] = useState({ orgId: null, tasks: 0, files: 0, activities: 0 });
+
   const navigate = useNavigate();
   
   const [tasks, setTasks] = useState([]);
@@ -194,8 +199,9 @@ function Dashboard() {
 
   const sortedActivities = [...dynamicActivities]
     .sort((a, b) => b.timestamp - a.timestamp)
-    .concat(defaultActivities)
+    .concat(dynamicActivities.length ? [] : defaultActivities)
     .slice(0, 4);
+
 
   return (
     <div className="grid-dash-layout">
@@ -331,6 +337,7 @@ function Dashboard() {
             </div>
 
             <section className="grid-metrics">
+
               <div className="stats-card-premium">
                 <div className="stats-icon-wrapper" style={{ backgroundColor: 'rgba(79, 70, 229, 0.12)', color: 'var(--nm-accent)' }}>
                   <span className="material-symbols-outlined">assignment_turned_in</span>
@@ -421,8 +428,11 @@ function Dashboard() {
                   <span>Recent Activity</span>
                 </h3>
 
-                <div className="activity-feed-list">
+              <div className="activity-feed-list">
+                
+
                   {sortedActivities.map(act => (
+
                     <div key={act.id} className="activity-feed-item">
                       <div className="activity-badge">{act.initial}</div>
                       <div className="activity-content">
@@ -583,7 +593,68 @@ export default App;
    LOCAL COMPONENT NEUMORPHIC STYLESHEET
    ========================================================================== */
 const styles = `
+/* Dashboard layout + Recent Activity */
+.grid-sections {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.25rem;
+}
+
+@media (max-width: 1024px) {
+  .grid-sections { grid-template-columns: 1fr; }
+}
+
+.section-card {
+  border-radius: 1.5rem;
+}
+
+.activity-feed-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.activity-feed-item {
+  display: flex;
+  gap: 0.75rem;
+  align-items: flex-start;
+  padding: 0.85rem 0.95rem;
+  border-radius: 1rem;
+  background: rgba(255, 255, 255, 0.15);
+  box-shadow: var(--nm-shadow-inset, inset 4px 4px 8px #b8c4d9, inset -4px -4px 8px #ffffff);
+}
+
+.activity-badge {
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 0.9rem;
+  background: rgba(79, 70, 229, 0.12);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  color: var(--nm-accent, #4f46e5);
+}
+
+.activity-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.activity-content p,
+.activity-content span,
+.activity-content h4 { margin: 0; }
+
+.activity-time {
+  font-size: 0.75rem;
+  color: var(--nm-text-muted, #6b7c96);
+  margin-top: 0.35rem;
+}
+
+/* End Dashboard layout + Recent Activity */
+
 .nm-back-action-btn {
+
   height: 2.5rem;
   width: 2.5rem;
   display: flex;
