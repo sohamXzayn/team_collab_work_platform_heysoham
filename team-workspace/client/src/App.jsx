@@ -85,6 +85,19 @@ function Dashboard() {
       }
     });
 
+    // 2b. Fetch Organization-Specific Polls (for Recent Activity)
+    const pollsRef = ref(db, `organizations/${currentOrg.id}/polls`);
+    const unsubscribePolls = onValue(pollsRef, () => {});
+
+    // 2c. Fetch Organization-Specific Reports (for Recent Activity)
+    const reportsRef = ref(db, `organizations/${currentOrg.id}/reports`);
+    const unsubscribeReports = onValue(reportsRef, () => {});
+
+    // 2d. Fetch Organization-Specific Whiteboards (for Recent Activity)
+    const whiteboardsRef = ref(db, `organizations/${currentOrg.id}/whiteboards`);
+    const unsubscribeWhiteboards = onValue(whiteboardsRef, () => {});
+
+
     // 3. Fetch Organization Member Registry count
     const membersRef = ref(db, `organizations/${currentOrg.id}/members`);
     const unsubscribeUsers = onValue(membersRef, (snapshot) => {

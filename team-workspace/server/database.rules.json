@@ -1,0 +1,28 @@
+{
+  "rules": {
+    ".read": "auth != null",
+    ".write": "auth != null",
+
+    "organizations": {
+      "$orgId": {
+        ".read": "root.child('organizations').child($orgId).child('members').child(auth.uid).exists()",
+        ".write": "root.child('organizations').child($orgId).child('members').child(auth.uid).exists()",
+
+        "members": {
+          "$uid": {
+            ".read": "auth.uid === $uid",
+            ".write": "auth.uid === $uid"
+          }
+        }
+      }
+    },
+
+    "users": {
+      "$uid": {
+        ".read": "auth.uid === $uid",
+        ".write": "auth.uid === $uid"
+      }
+    }
+  }
+}
+
