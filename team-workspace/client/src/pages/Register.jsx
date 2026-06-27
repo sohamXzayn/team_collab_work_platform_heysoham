@@ -1,7 +1,11 @@
 import { useState } from 'react';
+
 import { useAuth } from '../context/AuthContext';
 import { useNavigate, Link } from 'react-router-dom';
 import './neumorphism.css';
+import sadLogo from '../assets/sad.png';
+
+
 
 export default function Register() {
   const [name, setName] = useState('');
@@ -31,7 +35,15 @@ export default function Register() {
     <div className="auth-wrapper">
       <div className="auth-card">
         <div className="brand-logo-container">
-          <div className="brand-logo">🚀</div>
+          <div className="brand-logo" style={{ width: '48px', height: '48px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <img
+              src={sadLogo}
+              alt="CollabWorkspace logo"
+              style={{ width: '48px', height: '48px', objectFit: 'contain', display: 'block' }}
+            />
+          </div>
+
+
         </div>
 
         <h2 className="auth-title">Join Workspace</h2>
@@ -41,7 +53,7 @@ export default function Register() {
         <form onSubmit={handleSubmit} className="auth-form">
           <div className="auth-input-group">
             <label className="auth-label">Full Name</label>
-            <input type="text" required value={name} onChange={(e) => setName(e.target.value)} className="input-field" placeholder="John Doe" />
+            <input type="text" required value={name} onChange={(e) => setName(e.target.value)} className="input-field" placeholder="Soham H." />
           </div>
           <div className="auth-input-group">
             <label className="auth-label">Email Address</label>

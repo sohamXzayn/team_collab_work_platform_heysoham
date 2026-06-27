@@ -5,6 +5,8 @@ import { auth, db } from '../services/firebase';
 import { GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
 import { ref, get, set } from 'firebase/database';
 import './neumorphism.css';
+import sadLogo from '../assets/sad.png';
+
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -65,7 +67,14 @@ export default function Login() {
     <div className="auth-wrapper">
       <div className="auth-card">
         <div className="brand-logo-container">
-          <div className="brand-logo" style={{ fontSize: '2rem' }}>🌌</div>
+          <div className="brand-logo" style={{ width: '48px', height: '48px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <img
+              src={sadLogo}
+              alt="CollabWorkspace logo"
+              style={{ width: '48px', height: '48px', objectFit: 'contain', display: 'block' }}
+            />
+          </div>
+
         </div>
 
         <h2 className="auth-title" style={{ color: 'var(--nm-text)' }}>Welcome Back</h2>

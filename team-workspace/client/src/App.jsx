@@ -18,6 +18,8 @@ import CodeRoomPage from './pages/CodeRoomPage';
 import WhiteboardPage from './pages/WhiteboardPage'; 
 import OrgSelectPage from './pages/OrgSelectPage'; 
 import NotificationToast from './components/NotificationToast';
+import sadLogo from './assets/sad.png';
+
 
 // Redesigned premium Dashboard component
 function Dashboard() {
@@ -34,13 +36,17 @@ function Dashboard() {
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [editName, setEditName] = useState('');
   const [editBio, setEditBio] = useState('');
+  const [editDpEmoji, setEditDpEmoji] = useState('');
   const [isSavingProfile, setIsSavingProfile] = useState(false);
+
 
   useEffect(() => {
     if (userData) {
       setEditName(userData.name || '');
       setEditBio(userData.bio || '');
+      setEditDpEmoji(userData.dpEmoji || '');
     }
+
   }, [userData]);
 
   useEffect(() => {
@@ -113,8 +119,10 @@ function Dashboard() {
     try {
       const updates = {
         [`users/${currentUser.uid}/name`]: editName.trim(),
-        [`users/${currentUser.uid}/bio`]: editBio.trim()
+        [`users/${currentUser.uid}/bio`]: editBio.trim(),
+        [`users/${currentUser.uid}/dpEmoji`]: (editDpEmoji || '').trim()
       };
+
 
       // Synchronize changes inside active membership lists if context available
       if (currentOrg?.id) {
@@ -195,14 +203,24 @@ function Dashboard() {
       <aside className="dashboard-sidebar-panel">
         <div>
           <div className="brand-logo-container" style={{ marginBottom: '2rem', justifyContent: 'flex-start' }}>
-            <div className="brand-logo" style={{ width: '48px', height: '48px', fontSize: '1.75rem' }}>🌌</div>
-            <span className="font-bold text-lg" style={{ marginLeft: '1rem', alignSelf: 'center', color: 'var(--nm-text)' }}>CollabWorkspace</span>
+            <div className="brand-logo" style={{ width: '48px', height: '48px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <img
+                src={sadLogo}
+
+
+                alt="CollabWorkspace logo"
+                style={{ width: '48px', height: '48px', objectFit: 'contain', display: 'block' }}
+              />
+            </div>
+
+            <span className="font-bold text-lg" style={{ marginLeft: '1rem', alignSelf: 'center', color: 'var(--nm-text)' }}>TeamCoWorkspace</span>
           </div>
 
           <div className="profile-section-dash">
-            <div className="profile-avatar-large">
-              {userData?.name ? userData.name.substring(0, 2).toUpperCase() : 'U'}
+            <div className="profile-avatar-large" aria-label="User DP">
+              {userData?.dpEmoji ? userData.dpEmoji : (userData?.name ? userData.name.substring(0, 2).toUpperCase() : 'U')}
             </div>
+
             <h3 className="font-bold text-base mb-1" style={{ color: 'var(--nm-text)' }}>{userData?.name || 'Workspace Member'}</h3>
             <span className="text-xs font-semibold px-3 py-1 rounded-full capitalize" style={{
               backgroundColor: userData?.role === 'admin' ? 'rgba(79, 70, 229, 0.15)' : 'rgba(100, 116, 139, 0.15)',
@@ -282,7 +300,7 @@ function Dashboard() {
             </button>
             <div>
               <span className="text-xs font-semibold text-indigo uppercase tracking-wider">
-                {currentOrg ? `Organization Context: ${currentOrg.name}` : 'Multi-Tenant Sandbox'}
+                {currentOrg ? `Active Organization: ${currentOrg.name}` : 'Multi-Tenant Sandbox'}
               </span>
               <h1 className="font-bold text-2xl mt-0.5" style={{ color: 'var(--nm-text)' }}>Welcome back, {userData?.name || 'Teammate'}!</h1>
             </div>
@@ -453,7 +471,23 @@ function Dashboard() {
               </div>
 
               <div className="nm-modal-field-group">
+                <label className="nm-modal-input-label">DP Emoji</label>
+                <div className="nm-modal-input-wrapper nm-inset">
+                  <span className="material-symbols-outlined nm-input-icon">sentiment_satisfied</span>
+                  <input
+                    type="text"
+                    value={editDpEmoji}
+                    onChange={(e) => setEditDpEmoji(e.target.value)}
+                    className="nm-modal-input"
+                    placeholder="🙂"
+                    maxLength={4}
+                  />
+                </div>
+              </div>
+
+              <div className="nm-modal-field-group">
                 <label className="nm-modal-input-label">Bio / Status</label>
+
                 <div className="nm-modal-input-wrapper nm-inset">
                   <span className="material-symbols-outlined nm-input-icon">description</span>
                   <textarea 
