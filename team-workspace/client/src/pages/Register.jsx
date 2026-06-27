@@ -5,7 +5,9 @@ import { useNavigate, Link } from 'react-router-dom';
 import './neumorphism.css';
 import sadLogo from '../assets/sad.png';
 
-
+import { auth, db } from '../services/firebase';
+import { GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
+import { ref, get, set } from 'firebase/database';
 
 export default function Register() {
   const [name, setName] = useState('');
@@ -15,6 +17,7 @@ export default function Register() {
   const [loading, setLoading] = useState(false);
   const { signup } = useAuth();
   const navigate = useNavigate();
+
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -30,6 +33,37 @@ export default function Register() {
       setLoading(false);
     }
   }
+
+  async function handleGoogleSignIn() {
+    try {
+      setError('');
+      setLoading(true);
+      const provider = new GoogleAuthProvider();
+      const result = await signInWithPopup(auth, provider);
+      const user = result.user;
+
+      // If profile path doesn't exist, provision it
+      const userRef = ref(db, `users/${user.uid}`);
+      const snapshot = await get(userRef);
+
+      if (!snapshot.exists()) {
+        await set(userRef, {
+          name: user.displayName || 'Google User',
+          email: user.email,
+          role: 'member',
+          createdAt: Date.now()
+        });
+      }
+
+      navigate('/');
+    } catch (err) {
+      setError('Google authenticating failed. Try once more.');
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  }
+
 
   return (
     <div className="auth-wrapper">
@@ -71,8 +105,12 @@ export default function Register() {
 
         <div className="divider">Or register with</div>
 
-        <button type="button" className="btn-outline" onClick={() => alert('Social auth coming soon!')}>
-          <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/action/google.svg" style={{ width: '1.25rem', height: '1.25rem' }} alt="Google" />
+        <button
+          type="button"
+          className="btn-outline"
+          onClick={handleGoogleSignIn}
+          disabled={loading}
+        >
           <span>Google</span>
         </button>
 
@@ -83,3 +121,4 @@ export default function Register() {
     </div>
   );
 }
+

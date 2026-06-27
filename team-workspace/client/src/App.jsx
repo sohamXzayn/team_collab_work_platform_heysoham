@@ -502,7 +502,7 @@ function Dashboard() {
                     value={editDpEmoji}
                     onChange={(e) => setEditDpEmoji(e.target.value)}
                     className="nm-modal-input"
-                    placeholder="🙂"
+                    placeholder="add emoji"
                     maxLength={4}
                   />
                 </div>

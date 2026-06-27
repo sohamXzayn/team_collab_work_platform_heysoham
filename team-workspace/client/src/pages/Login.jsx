@@ -144,7 +144,7 @@ export default function Login() {
           onClick={handleGoogleSignIn}
           style={{ borderRadius: '1rem', gap: '0.75rem', padding: '0.75rem' }}
         >
-          <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/action/google.svg" style={{ width: '1.2rem', height: '1.2rem' }} alt="Google Identity Gateway" />
+          
           <span className="font-bold text-sm" style={{ color: 'var(--nm-text)' }}>Authorize with Google</span>
         </button>
 
